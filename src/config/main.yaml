@@ -1,0 +1,9 @@
+defaults:
+  - agents: agent
+  - models: model
+  - strategies: strategy
+  - _self_
+
+env:
+  name: my_bt
+  interval_minutes: 1440
