@@ -2,6 +2,7 @@ import os
 
 import openai
 from pydantic import BaseModel
+
 from src.py_libs.qa_gpt.chat.private_keys import openapi_key
 
 os.environ["OPENAI_API_KEY"] = openapi_key
@@ -16,8 +17,11 @@ def check_api():
 def get_chat_gpt_response(messages):
     check_api()
     MODEL = "gpt-4o-mini"
-    response = openai.ChatCompletion.create(model=MODEL, messages=messages, temperature=1)
-    return response["choices"][0]["message"]["content"]
+    chat_completion = client.chat.completions.create(
+        messages=messages,
+        model=MODEL,
+    )
+    return chat_completion.choices[0].message
 
 
 def get_chat_gpt_response_structure(messages: list, res_obj: BaseModel):

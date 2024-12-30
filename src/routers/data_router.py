@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 
 from fastapi import APIRouter
+
 from src.py_libs.controllers.data_controller import DataController
 
 # Configure logging

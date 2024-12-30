@@ -1,11 +1,14 @@
 from pydantic import BaseModel
+
 from src.py_libs.qa_gpt.chat.chat import get_chat_gpt_response_structure
+
 
 class Step(BaseModel):
     action: str
     explanation: str
     money: int
     human_power: int
+
 
 if __name__ == "__main__":
     # messages = [

@@ -54,3 +54,8 @@ yahoo-fin==0.8.9.1
 yfinance==0.2.35
 zipp==3.21.0
 openai==0.27.2
+pre-commit==4.0.1
+black==24.4.2
+flake8==7.1.0
+isort==5.13.2
+pyupgrade==3.17.0

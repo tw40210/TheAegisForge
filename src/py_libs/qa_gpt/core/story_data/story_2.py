@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+
 from src.py_libs.chat.chat import get_chat_gpt_response_structure
 
 
