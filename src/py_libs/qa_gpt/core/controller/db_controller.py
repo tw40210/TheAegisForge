@@ -1,5 +1,6 @@
 import logging
 import pickle
+import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -14,19 +15,19 @@ class BasicDatabaseController(ABC):
         pass
 
     @abstractmethod
-    def get_data(self, target_id: str) -> dict:
+    def get_data(self, target_path: str) -> any:
         pass
 
     @abstractmethod
-    def save_data(self, data: dict) -> int:
+    def save_data(self, data: dict, target_path: str) -> int:
         pass
 
     @abstractmethod
-    def delete_data(self, file_name: str, question_set_id: str) -> int:
+    def delete_data(self, target_path: str) -> int:
         pass
 
     @abstractmethod
-    def update_data(self, data: str, file_name: str, question_set_id: str) -> int:
+    def update_data(self, data: str, target_path: str) -> int:
         pass
 
 
@@ -66,12 +67,9 @@ class LocalDatabaseController(BasicDatabaseController):
         return prev, cur, leaf_key
 
     def get_data(self, target_path: str) -> any:
-        prev, cur, leaf_key = self._query_path(target_path)
+        logger.debug(f"Try to get `{target_path}`.")
 
-        if leaf_key in prev:
-            logger.info(f"Got {target_path}.")
-        else:
-            logger.warning(f"{target_path} is not found. Nothing gotten.")
+        prev, cur, leaf_key = self._query_path(target_path)
 
         return cur
 
@@ -80,7 +78,7 @@ class LocalDatabaseController(BasicDatabaseController):
         prev[leaf_key] = data
 
         self._commit()
-        logger.info(f"{target_path} is newly saved.")
+        logger.debug(f"`{target_path}` is newly saved.")
 
         return 0
 
@@ -89,9 +87,9 @@ class LocalDatabaseController(BasicDatabaseController):
         if leaf_key in prev:
             prev.pop(leaf_key)
             self._commit()
-            logger.info(f"{target_path} is deleted.")
+            logger.debug(f"`{target_path}` is deleted.")
         else:
-            logger.warning(f"{target_path} is not found. Nothing deleted.")
+            logger.warning(f"`{target_path}` is not found. Nothing deleted.")
 
         return 0
 
@@ -100,7 +98,7 @@ class LocalDatabaseController(BasicDatabaseController):
         self.save_data(data, target_path)
 
         self._commit()
-        logger.info(f"{target_path} is updated.")
+        logger.debug(f"`{target_path}` is updated.")
 
         return 0
 
@@ -115,6 +113,42 @@ class MaterialController:
         self.material_folder_path.mkdir(exist_ok=True)
         self.archive_path.mkdir(exist_ok=True)
 
-    def _fetch_material_folder(self, source_folder_path: Path):
+        # init in db
+        if self.df_controller.get_data(self.db_table_name) is None:
+            self.df_controller.save_data({}, self.db_table_name)
+        if self.df_controller.get_data(self.db_mapping_table_name) is None:
+            self.df_controller.save_data({}, self.db_mapping_table_name)
 
-        print()
+    def fetch_material_folder(self, source_folder_path: Path):
+        archive_file_id = len(self.df_controller.get_data(self.db_mapping_table_name))
+
+        for file_path in sorted(source_folder_path.iterdir()):
+            if (
+                not str(file_path).endswith(".pdf")
+                or self.df_controller.get_data(
+                    ".".join([self.db_mapping_table_name, file_path.stem])
+                )
+                is not None
+            ):
+                continue
+
+            file_meta = {}
+            file_meta["id"] = archive_file_id
+            file_meta["file_name"] = file_path.stem
+            file_meta["file_suffix"] = file_path.suffix
+            file_meta["file_path"] = self.archive_path / Path(
+                f"archived_file_{archive_file_id}{file_path.suffix}"
+            )
+            file_meta["question_sets"] = {}
+
+            db_path = ".".join([self.db_table_name, str(archive_file_id)])
+            db_mapping_path = ".".join([self.db_mapping_table_name, file_meta["file_name"]])
+
+            self.df_controller.save_data(file_meta, db_path)
+            self.df_controller.save_data(archive_file_id, db_mapping_path)
+
+            shutil.copy(file_path, file_meta["file_path"])
+
+            archive_file_id += 1
+
+            logger.info(f"{file_path.stem} is archived with id:{archive_file_id}.")
