@@ -3,12 +3,14 @@ import pickle
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from src.py_libs.qa_gpt.core.constant import LOCAL_DB_FOLDER, MATERIAL_FOLDER
+
 logger = logging.getLogger(__name__)
 
 
 class BasicDatabaseController(ABC):
     @abstractmethod
-    def __init__(self, name: str):
+    def __init__(self, db_name: str):
         pass
 
     @abstractmethod
@@ -29,9 +31,12 @@ class BasicDatabaseController(ABC):
 
 
 class LocalDatabaseController(BasicDatabaseController):
-    def __init__(self, name: str = "local_db") -> None:
-        self.db_path = Path(f"./{name}.pkl")
+    def __init__(self, db_name: str = "local_db") -> None:
+        self.db_folder_path = Path(f"{LOCAL_DB_FOLDER}")
+        self.db_path = Path(f"{LOCAL_DB_FOLDER}/{db_name}.pkl")
         self.db = {}
+        self.db_folder_path.mkdir(exist_ok=True)
+
         self._init_local_df()
 
     def _init_local_df(self) -> None:
@@ -98,3 +103,18 @@ class LocalDatabaseController(BasicDatabaseController):
         logger.info(f"{target_path} is updated.")
 
         return 0
+
+
+class MaterialController:
+    def __init__(self, df_controller: BasicDatabaseController, archive_name: str) -> None:
+        self.df_controller = df_controller
+        self.material_folder_path = Path(MATERIAL_FOLDER)
+        self.archive_path = Path(f"{MATERIAL_FOLDER}/{archive_name}")
+        self.db_table_name = "material_table"
+        self.db_mapping_table_name = "material_id_mapping_table"
+        self.material_folder_path.mkdir(exist_ok=True)
+        self.archive_path.mkdir(exist_ok=True)
+
+    def _fetch_material_folder(self, source_folder_path: Path):
+
+        print()

@@ -10,3 +10,4 @@ src/private_env.py
 .vscode/launch.json
 src/py_libs/qa_gpt/chat/private_keys.py
 *.pdf
+*.pkl
