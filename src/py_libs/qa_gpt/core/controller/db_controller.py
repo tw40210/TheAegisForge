@@ -1,11 +1,14 @@
+import logging
 import pickle
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+logger = logging.getLogger(__name__)
+
 
 class BasicDatabaseController(ABC):
     @abstractmethod
-    def __init__(self):
+    def __init__(self, name: str):
         pass
 
     @abstractmethod
@@ -26,9 +29,8 @@ class BasicDatabaseController(ABC):
 
 
 class LocalDatabaseController(BasicDatabaseController):
-    def __init__(self, db_path: str = "./local_db.pkl") -> None:
-        db_path = Path(db_path)
-        self.db_path = db_path
+    def __init__(self, name: str = "local_db") -> None:
+        self.db_path = Path(f"./{name}.pkl")
         self.db = {}
         self._init_local_df()
 
@@ -37,28 +39,62 @@ class LocalDatabaseController(BasicDatabaseController):
             with open(str(self.db_path), "rb") as db_file:
                 self.db = pickle.load(db_file)
 
-    def get_data(self, file_name: str, question_set_id: str) -> dict:
-        question_sets = self.db.get(file_name, {})
-        question_set = question_sets.get(question_set_id, {})
-
-        return question_set
-
-    def save_data(self, data: dict, file_name: str, question_set_id: str) -> int:
-        if file_name not in self.db:
-            self.db[file_name] = {}
-
-        self.db[file_name][question_set_id] = data
+    def _commit(self) -> int:
+        with open(str(self.db_path), "wb") as db_file:
+            pickle.dump(self.db, db_file)
 
         return 0
 
-    def delete_data(self, file_name: str, question_set_id: str) -> int:
-        if file_name in self.db and question_set_id in self.db[file_name]:
-            self.db[file_name].pop(question_set_id)
+    def _query_path(self, target_path: str, create_path: bool = False):
+        prev = None
+        leaf_key = None
+        cur = self.db
+        for key in target_path.split("."):
+            if key not in cur:
+                if create_path:
+                    cur[key] = {}
+                else:
+                    return {}, None, leaf_key
+            prev = cur
+            leaf_key = key
+            cur = cur[key]
+        return prev, cur, leaf_key
+
+    def get_data(self, target_path: str) -> any:
+        prev, cur, leaf_key = self._query_path(target_path)
+
+        if leaf_key in prev:
+            logger.info(f"Got {target_path}.")
+        else:
+            logger.warning(f"{target_path} is not found. Nothing gotten.")
+
+        return cur
+
+    def save_data(self, data: dict, target_path: str) -> int:
+        prev, _, leaf_key = self._query_path(target_path, create_path=True)
+        prev[leaf_key] = data
+
+        self._commit()
+        logger.info(f"{target_path} is newly saved.")
 
         return 0
 
-    def update_data(self, data: str, file_name: str, question_set_id: str) -> int:
-        self.delete_data(file_name, question_set_id)
-        self.save_data(data, file_name, question_set_id)
+    def delete_data(self, target_path: str) -> int:
+        prev, _, leaf_key = self._query_path(target_path)
+        if leaf_key in prev:
+            prev.pop(leaf_key)
+            self._commit()
+            logger.info(f"{target_path} is deleted.")
+        else:
+            logger.warning(f"{target_path} is not found. Nothing deleted.")
+
+        return 0
+
+    def update_data(self, data: str, target_path: str) -> int:
+        self.delete_data(target_path)
+        self.save_data(data, target_path)
+
+        self._commit()
+        logger.info(f"{target_path} is updated.")
 
         return 0
