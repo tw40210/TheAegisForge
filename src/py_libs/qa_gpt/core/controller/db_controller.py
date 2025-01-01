@@ -5,6 +5,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 from src.py_libs.qa_gpt.core.constant import LOCAL_DB_FOLDER, MATERIAL_FOLDER
+from src.py_libs.qa_gpt.core.objects.materials import FileMeta
+from src.py_libs.qa_gpt.core.objects.questions import MultipleChoiceQuestionSet
 
 logger = logging.getLogger(__name__)
 
@@ -102,10 +104,14 @@ class LocalDatabaseController(BasicDatabaseController):
 
         return 0
 
+    @staticmethod
+    def get_target_path(path_list: list[str]) -> str:
+        return ".".join(path_list)
+
 
 class MaterialController:
-    def __init__(self, df_controller: BasicDatabaseController, archive_name: str) -> None:
-        self.df_controller = df_controller
+    def __init__(self, db_controller: BasicDatabaseController, archive_name: str) -> None:
+        self.db_controller = db_controller
         self.material_folder_path = Path(MATERIAL_FOLDER)
         self.archive_path = Path(f"{MATERIAL_FOLDER}/{archive_name}")
         self.db_table_name = "material_table"
@@ -114,41 +120,77 @@ class MaterialController:
         self.archive_path.mkdir(exist_ok=True)
 
         # init in db
-        if self.df_controller.get_data(self.db_table_name) is None:
-            self.df_controller.save_data({}, self.db_table_name)
-        if self.df_controller.get_data(self.db_mapping_table_name) is None:
-            self.df_controller.save_data({}, self.db_mapping_table_name)
+        if self.db_controller.get_data(self.db_table_name) is None:
+            self.db_controller.save_data({}, self.db_table_name)
+        if self.db_controller.get_data(self.db_mapping_table_name) is None:
+            self.db_controller.save_data({}, self.db_mapping_table_name)
+
+    @staticmethod
+    def remove_dot_from_file_name(file_path: Path) -> Path:
+        # We don't allow "." in file names since it's used in db query
+        new_file_name = file_path.stem.replace(".", "_") + file_path.suffix
+        new_file_path = file_path.parent / Path(new_file_name)
+
+        return new_file_path
 
     def fetch_material_folder(self, source_folder_path: Path):
-        archive_file_id = len(self.df_controller.get_data(self.db_mapping_table_name))
+        archive_file_id = len(self.db_controller.get_data(self.db_mapping_table_name))
 
         for file_path in sorted(source_folder_path.iterdir()):
             if (
                 not str(file_path).endswith(".pdf")
-                or self.df_controller.get_data(
-                    ".".join([self.db_mapping_table_name, file_path.stem])
+                or self.db_controller.get_data(
+                    LocalDatabaseController.get_target_path(
+                        [self.db_mapping_table_name, file_path.stem]
+                    )
                 )
                 is not None
             ):
                 continue
 
-            file_meta = {}
-            file_meta["id"] = archive_file_id
-            file_meta["file_name"] = file_path.stem
-            file_meta["file_suffix"] = file_path.suffix
-            file_meta["file_path"] = self.archive_path / Path(
-                f"archived_file_{archive_file_id}{file_path.suffix}"
+            # Rename the file in case there is an illegal name.
+            new_file_path = MaterialController.remove_dot_from_file_name(file_path)
+            file_path.rename(new_file_path)
+            file_path = new_file_path
+
+            file_meta = FileMeta(
+                id=archive_file_id,
+                file_name=file_path.stem,
+                file_suffix=file_path.suffix,
+                file_path=self.archive_path
+                / Path(f"archived_file_{archive_file_id}{file_path.suffix}"),
+                question_sets={},
             )
-            file_meta["question_sets"] = {}
 
-            db_path = ".".join([self.db_table_name, str(archive_file_id)])
-            db_mapping_path = ".".join([self.db_mapping_table_name, file_meta["file_name"]])
+            db_path = LocalDatabaseController.get_target_path(
+                [self.db_table_name, str(archive_file_id)]
+            )
+            db_mapping_path = LocalDatabaseController.get_target_path(
+                [self.db_mapping_table_name, file_meta.file_name]
+            )
 
-            self.df_controller.save_data(file_meta, db_path)
-            self.df_controller.save_data(archive_file_id, db_mapping_path)
+            self.db_controller.save_data(file_meta, db_path)
+            self.db_controller.save_data(archive_file_id, db_mapping_path)
 
-            shutil.copy(file_path, file_meta["file_path"])
+            shutil.copy(file_path, file_meta.file_path)
+
+            logger.info(f"{file_path.stem} is archived with id:{archive_file_id}.")
 
             archive_file_id += 1
 
-            logger.info(f"{file_path.stem} is archived with id:{archive_file_id}.")
+    def append_question_set(self, file_id: int, question_set: MultipleChoiceQuestionSet) -> int:
+        target_path = LocalDatabaseController.get_target_path([self.db_table_name, str(file_id)])
+        file_meta: FileMeta = self.db_controller.get_data(target_path)
+        question_sets = file_meta.question_sets
+        question_set_id = len(question_sets)
+
+        file_meta.question_sets[str(question_set_id)] = question_set
+
+        self.db_controller.save_data(file_meta, target_path)
+        return 0
+
+    def get_material_table(self) -> dict[str, FileMeta]:
+        return self.db_controller.get_data(self.db_table_name)
+
+    def get_material_mapping_table(self) -> dict:
+        return self.db_controller.get_data(self.db_mapping_table_name)
