@@ -5,7 +5,6 @@ from src.py_libs.qa_gpt.core.controller.db_controller import (
     MaterialController,
 )
 from src.py_libs.qa_gpt.core.controller.qa_controller import QAController
-from src.py_libs.qa_gpt.core.objects.materials import FileMeta
 
 
 def main():
@@ -22,8 +21,7 @@ def main():
 
     for file_id, file_meta in material_controller.get_material_table().items():
 
-        file_meta: FileMeta
-        question_set = qa_cotroller.get_questions(file_meta.file_path)
+        question_set = qa_cotroller.get_questions(file_meta["file_path"])
         material_controller.append_question_set(file_id, question_set)
 
 
