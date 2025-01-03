@@ -21,8 +21,8 @@ def main():
 
     for file_id, file_meta in material_controller.get_material_table().items():
 
-        question_set = qa_cotroller.get_questions(file_meta["file_path"])
-        material_controller.append_question_set(file_id, question_set)
+        mc_question_set = qa_cotroller.get_questions(file_meta["file_path"])
+        material_controller.append_mc_question_set(file_id, mc_question_set)
 
 
 if __name__ == "__main__":

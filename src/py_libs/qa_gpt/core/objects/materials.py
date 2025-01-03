@@ -8,4 +8,4 @@ class FileMeta:
     file_name: str
     file_suffix: str
     file_path: Path
-    question_sets: dict
+    mc_question_sets: dict

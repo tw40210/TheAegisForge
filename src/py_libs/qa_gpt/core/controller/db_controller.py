@@ -160,7 +160,7 @@ class MaterialController:
             file_meta["file_path"] = self.archive_path / Path(
                 f"archived_file_{archive_file_id}{file_path.suffix}"
             )
-            file_meta["question_sets"] = {}
+            file_meta["mc_question_sets"] = {}
 
             db_path = LocalDatabaseController.get_target_path(
                 [self.db_table_name, str(archive_file_id)]
@@ -178,13 +178,13 @@ class MaterialController:
 
             archive_file_id += 1
 
-    def append_question_set(self, file_id: int, question_set: MultipleChoiceQuestionSet) -> int:
+    def append_mc_question_set(self, file_id: int, question_set: MultipleChoiceQuestionSet) -> int:
         target_path = LocalDatabaseController.get_target_path([self.db_table_name, str(file_id)])
         file_meta = self.db_controller.get_data(target_path)
-        question_sets = file_meta["question_sets"]
-        question_set_id = len(question_sets)
+        mc_question_sets = file_meta["mc_question_sets"]
+        question_set_id = len(mc_question_sets)
 
-        file_meta["question_sets"][str(question_set_id)] = question_set
+        file_meta["mc_question_sets"][str(question_set_id)] = question_set
 
         self.db_controller.save_data(file_meta, target_path)
         return 0
