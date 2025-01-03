@@ -87,7 +87,7 @@ class LocalDatabaseController(BasicDatabaseController):
     def delete_data(self, target_path: str) -> int:
         prev, _, leaf_key = self._query_path(target_path)
         if leaf_key in prev:
-            prev.pop(leaf_key)
+            del prev[leaf_key]
             self._commit()
             logger.debug(f"`{target_path}` is deleted.")
         else:
@@ -153,14 +153,22 @@ class MaterialController:
             file_path.rename(new_file_path)
             file_path = new_file_path
 
-            file_meta = {}
-            file_meta["id"] = archive_file_id
-            file_meta["file_name"] = file_path.stem
-            file_meta["file_suffix"] = file_path.suffix
-            file_meta["file_path"] = self.archive_path / Path(
-                f"archived_file_{archive_file_id}{file_path.suffix}"
+            # file_meta = {}
+            # file_meta["id"] = archive_file_id
+            # file_meta["file_name"] = file_path.stem
+            # file_meta["file_suffix"] = file_path.suffix
+            # file_meta["file_path"] = self.archive_path / Path(
+            #     f"archived_file_{archive_file_id}{file_path.suffix}"
+            # )
+            # file_meta["mc_question_sets"] = {}
+            file_meta = FileMeta(
+                id=archive_file_id,
+                file_name=file_path.stem,
+                file_suffix=file_path.suffix,
+                file_path=self.archive_path
+                / Path(f"archived_file_{archive_file_id}{file_path.suffix}"),
+                mc_question_sets={},
             )
-            file_meta["mc_question_sets"] = {}
 
             db_path = LocalDatabaseController.get_target_path(
                 [self.db_table_name, str(archive_file_id)]
@@ -194,3 +202,12 @@ class MaterialController:
 
     def get_material_mapping_table(self) -> dict:
         return self.db_controller.get_data(self.db_mapping_table_name)
+
+    def output_material_as_folder(self, output_folder_path: Path):
+        material_table = self.get_material_table()
+        material_ids = list(material_table.keys())
+
+        for material_id in material_ids:
+            meta_file_path = output_folder_path / material_table[str(material_id)]["file_name"]
+            del meta_file_path
+        pass
