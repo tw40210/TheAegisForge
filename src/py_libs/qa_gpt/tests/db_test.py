@@ -28,7 +28,7 @@ def test_local_db():
     test_local_db_controller.db_path.unlink()
 
 
-def test_local_material_controller():
+def test_local_material_controller_input():
     test_db_name = "test_local_db"
     test_archive_name = "test_archive"
     test_source_folder_path = Path("./test_data")
@@ -49,6 +49,26 @@ def test_local_material_controller():
     test_local_db_controller.db_path.unlink()
 
 
+def test_local_material_controller_output():
+    test_db_name = "test_local_output_db"
+    test_archive_name = "test_archive"
+    test_output_folder_path = Path("./test_output_question_data")
+    test_output_folder_path.mkdir(exist_ok=True)
+
+    test_local_db_controller = LocalDatabaseController(db_name=test_db_name)
+    test_material_controller = MaterialController(
+        db_controller=test_local_db_controller, archive_name=test_archive_name
+    )
+    test_material_controller.output_material_as_folder(test_output_folder_path)
+
+    assert len(test_material_controller.get_material_table()) == len(
+        list(test_output_folder_path.iterdir())
+    )
+
+    shutil.rmtree(test_output_folder_path)
+
+
 if __name__ == "__main__":
     test_local_db()
-    test_local_material_controller()
+    test_local_material_controller_input()
+    test_local_material_controller_output()

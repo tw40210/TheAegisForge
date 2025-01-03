@@ -1,7 +1,9 @@
+import json
 import logging
 import pickle
 import shutil
 from abc import ABC, abstractmethod
+from dataclasses import asdict
 from pathlib import Path
 
 from src.py_libs.qa_gpt.core.constant import LOCAL_DB_FOLDER, MATERIAL_FOLDER
@@ -153,14 +155,6 @@ class MaterialController:
             file_path.rename(new_file_path)
             file_path = new_file_path
 
-            # file_meta = {}
-            # file_meta["id"] = archive_file_id
-            # file_meta["file_name"] = file_path.stem
-            # file_meta["file_suffix"] = file_path.suffix
-            # file_meta["file_path"] = self.archive_path / Path(
-            #     f"archived_file_{archive_file_id}{file_path.suffix}"
-            # )
-            # file_meta["mc_question_sets"] = {}
             file_meta = FileMeta(
                 id=archive_file_id,
                 file_name=file_path.stem,
@@ -208,6 +202,22 @@ class MaterialController:
         material_ids = list(material_table.keys())
 
         for material_id in material_ids:
-            meta_file_path = output_folder_path / material_table[str(material_id)]["file_name"]
-            del meta_file_path
-        pass
+            material_folder = output_folder_path / Path(material_table[str(material_id)].file_name)
+            material_folder.mkdir(exist_ok=True)
+            meta_file_path = material_folder / Path("meta_data.json")
+
+            meta_dict = asdict(material_table[str(material_id)])
+            meta_dict["file_path"] = str(meta_dict["file_path"])
+            meta_dict.pop("mc_question_sets")
+
+            mc_question_sets = material_table[str(material_id)].mc_question_sets
+
+            with open(str(meta_file_path), "w") as file:
+                json.dump(meta_dict, file, indent=4)
+
+            for set_id, mc_question_set in mc_question_sets.items():
+                mc_question_file_path = material_folder / Path(f"mc_question_{set_id}.json")
+                with open(str(mc_question_file_path), "w") as file:
+                    json.dump(mc_question_set.model_dump(), file, indent=4)
+
+        return 0

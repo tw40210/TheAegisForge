@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 
+from src.py_libs.qa_gpt.core.objects.questions import MultipleChoiceQuestionSet
+
 
 class BasicDataBaseObject(ABC):
 
@@ -28,7 +30,7 @@ class FileMeta(BasicDataBaseObject):
     file_name: str
     file_suffix: str
     file_path: Path
-    mc_question_sets: dict
+    mc_question_sets: dict[str, MultipleChoiceQuestionSet]
 
     def __getitem__(self, key):
         # Get the attribute using dictionary-like syntax
