@@ -7,7 +7,7 @@ from src.py_libs.qa_gpt.core.controller.db_controller import (
 from src.py_libs.qa_gpt.core.controller.qa_controller import QAController
 
 
-def fetch_material_add_to_3_sets():
+def fetch_material_add_sets():
     db_name = "my_local_db"
     archive_name = "my_archive"
     source_folder_path = Path("./pdf_data")
@@ -23,11 +23,31 @@ def fetch_material_add_to_3_sets():
         print(
             f"Material {file_id} originally have {len(file_meta.mc_question_sets)} mc_questions sets."
         )
-        while len(file_meta.mc_question_sets) < 3:
+        while len(file_meta.mc_question_sets) < 2:
 
             mc_question_set = qa_cotroller.get_questions(file_meta["file_path"])
             material_controller.append_mc_question_set(file_id, mc_question_set)
             print(f"Material {file_id} have {len(file_meta.mc_question_sets)} questions now.")
+
+
+def fetch_material_add_summary():
+    db_name = "my_local_db"
+    archive_name = "my_archive"
+    source_folder_path = Path("./pdf_data")
+    local_db_controller = LocalDatabaseController(db_name=db_name)
+    material_controller = MaterialController(
+        db_controller=local_db_controller, archive_name=archive_name
+    )
+    qa_cotroller = QAController()
+
+    material_controller.fetch_material_folder(source_folder_path)
+
+    for file_id, file_meta in material_controller.get_material_table().items():
+
+        while file_meta.summary is None:
+            print(f"Adding summary to material {file_id}.")
+            summary = qa_cotroller.get_summary(file_meta["file_path"])
+            material_controller.append_summary(file_id, summary)
 
 
 def output_question_data():
@@ -44,5 +64,6 @@ def output_question_data():
 
 
 if __name__ == "__main__":
-    fetch_material_add_to_3_sets()
+    fetch_material_add_summary()
+    fetch_material_add_sets()
     output_question_data()

@@ -9,6 +9,7 @@ from pathlib import Path
 from src.py_libs.qa_gpt.core.constant import LOCAL_DB_FOLDER, MATERIAL_FOLDER
 from src.py_libs.qa_gpt.core.objects.materials import FileMeta
 from src.py_libs.qa_gpt.core.objects.questions import MultipleChoiceQuestionSet
+from src.py_libs.qa_gpt.core.objects.summaries import Summary
 
 logger = logging.getLogger(__name__)
 
@@ -162,6 +163,7 @@ class MaterialController:
                 file_path=self.archive_path
                 / Path(f"{file_path.stem}_{archive_file_id}{file_path.suffix}"),
                 mc_question_sets={},
+                summary=None,
             )
 
             db_path = LocalDatabaseController.get_target_path(
@@ -180,15 +182,27 @@ class MaterialController:
 
             archive_file_id += 1
 
-    def append_mc_question_set(self, file_id: int, question_set: MultipleChoiceQuestionSet) -> int:
+    def _get_material_filemeta(self, file_id: int) -> FileMeta:
         target_path = LocalDatabaseController.get_target_path([self.db_table_name, str(file_id)])
         file_meta = self.db_controller.get_data(target_path)
+        return file_meta, target_path
+
+    def append_mc_question_set(self, file_id: int, question_set: MultipleChoiceQuestionSet) -> int:
+        file_meta, target_path = self._get_material_filemeta(file_id)
         mc_question_sets = file_meta["mc_question_sets"]
         question_set_id = len(mc_question_sets)
 
         file_meta["mc_question_sets"][str(question_set_id)] = question_set
+        self.db_controller.save_data(file_meta, target_path)
+
+        return 0
+
+    def append_summary(self, file_id: int, summary: Summary) -> int:
+        file_meta, target_path = self._get_material_filemeta(file_id)
+        file_meta["summary"] = summary
 
         self.db_controller.save_data(file_meta, target_path)
+
         return 0
 
     def get_material_table(self) -> dict[str, FileMeta]:
@@ -211,6 +225,7 @@ class MaterialController:
             meta_dict = asdict(material_table[str(material_id)])
             meta_dict["file_path"] = str(meta_dict["file_path"])
             meta_dict.pop("mc_question_sets")
+            meta_dict.pop("summary")
 
             mc_question_sets = material_table[str(material_id)].mc_question_sets
 

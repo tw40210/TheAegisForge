@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from src.py_libs.qa_gpt.core.objects.questions import MultipleChoiceQuestionSet
+from src.py_libs.qa_gpt.core.objects.summaries import Summary
 
 
 class BasicDataBaseObject(ABC):
@@ -31,6 +32,7 @@ class FileMeta(BasicDataBaseObject):
     file_suffix: str
     file_path: Path
     mc_question_sets: dict[str, MultipleChoiceQuestionSet]
+    summary: Summary
 
     def __getitem__(self, key):
         # Get the attribute using dictionary-like syntax

@@ -133,7 +133,6 @@ Choice:
         user_input = self.user_input_temp.copy()
         user_input.update({"content": material_text})
         messages = [self.summary_message_temp.copy(), user_input]
-        # result = get_chat_gpt_response(messages)
         result = get_chat_gpt_response_structure(messages, res_obj=Summary)
 
         return result
