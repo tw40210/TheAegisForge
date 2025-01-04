@@ -37,8 +37,17 @@ def display_question(question, options, question_key):
 
 folder_path = "output_question_data"
 
+search_query = st.text_input("Search material", "")
 material_folders = list(os.listdir(folder_path))
-selected_material = st.selectbox("Select a material folder", material_folders)
+
+fileted_material_folders = [
+    material_folder
+    for material_folder in material_folders
+    if search_query.lower() in material_folder.lower()
+]
+selected_material = st.selectbox("Select a material folder", fileted_material_folders)
+
+
 selected_file = None
 if selected_material:
     material_folder_path = os.path.join(folder_path, selected_material)
@@ -47,9 +56,8 @@ if selected_material:
         for f in os.listdir(material_folder_path)
         if f.endswith(".json") and not f.startswith("meta_data")
     ]
-    search_query = st.text_input("Search file", "")
-    fileted_files = [f for f in files if search_query.lower() in f.lower()]
-    selected_file = st.selectbox("Select a file", fileted_files)
+
+    selected_file = st.selectbox("Select a file", files)
 
 if selected_file:
     file_path = os.path.join(material_folder_path, selected_file)
