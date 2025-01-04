@@ -4,7 +4,7 @@ import os
 import streamlit as st
 
 
-def load_questions_from_file(file_path):
+def load_json_from_file(file_path):
     with open(file_path) as file:
         return json.load(file)
 
@@ -38,8 +38,10 @@ def display_question(question, options, question_key):
 # Set wide mode
 st.set_page_config(layout="wide")
 _, col1, _, col2, _ = st.columns([1, 4, 1, 6, 1])
+summary = None
 
 with col1:
+    st.header("Material selection")
     folder_path = "output_question_data"
 
     search_query = st.text_input("Search material", "")
@@ -58,18 +60,20 @@ with col1:
         files = [
             f
             for f in os.listdir(material_folder_path)
-            if f.endswith(".json") and not f.startswith("meta_data")
+            if f.endswith(".json") and not f.startswith("meta_data") and not f.startswith("summary")
         ]
 
         selected_file = st.selectbox("Select a file", files)
 
-    if selected_file:
+    st.header("Question set")
+    st.write("---")
+    if selected_file is not None:
         file_path = os.path.join(material_folder_path, selected_file)
-        questions = load_questions_from_file(file_path)
+        summary_path = os.path.join(material_folder_path, "summary.json")
+        questions = load_json_from_file(file_path)
+        summary = load_json_from_file(summary_path)
 
         user_selections = []
-
-        st.write("---")
 
         for question_key, question_set in questions.items():
             parsed_question = get_parsed_question(question_set)
@@ -103,4 +107,9 @@ with col1:
 
 
 with col2:
-    st.write("This is col2")
+    st.header("Material summary")
+    if summary is not None:
+        st.json(json.dumps(summary, indent=4))
+        # st.code(json.dumps(summary, indent=4), language="json")
+    else:
+        st.write("No material selected.")

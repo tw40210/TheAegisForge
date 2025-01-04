@@ -8,7 +8,7 @@ class Motivation(BaseModel):
     why_can_be_solved: str
 
     def __str__(self):
-        split_line = "=" * 20 + "\n"
+        split_line = "*" * 20 + "\n"
         return f"""
         {split_line}
         description:{self.description}
@@ -26,7 +26,7 @@ class Conclusion(BaseModel):
     contribution: str
 
     def __str__(self):
-        split_line = "=" * 20 + "\n"
+        split_line = "*" * 20 + "\n"
         return f"""
         {split_line}
         description:{self.description}
@@ -45,7 +45,7 @@ class BulletPoint(BaseModel):
     importance: int
 
     def __str__(self):
-        split_line = "=" * 20 + "\n"
+        split_line = "*" * 20 + "\n"
         return f"""
         {split_line}
         subject:{self.subject}
@@ -61,3 +61,13 @@ class Summary(BaseModel):
     motivation: Motivation
     conclusion: Conclusion
     content_bullet_points: list[BulletPoint]
+
+    def __str__(self):
+        split_line = "=" * 20 + "\n"
+        return f"""
+        {split_line}
+        motivation:{self.motivation}
+        conclusion:{self.conclusion}
+        content_bullet_points:{self.content_bullet_points}
+        {split_line}
+        """

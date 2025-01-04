@@ -221,6 +221,7 @@ class MaterialController:
             )
             material_folder.mkdir(exist_ok=True)
             meta_file_path = material_folder / Path("meta_data.json")
+            summary_file_path = material_folder / Path("summary.json")
 
             meta_dict = asdict(material_table[str(material_id)])
             meta_dict["file_path"] = str(meta_dict["file_path"])
@@ -228,9 +229,13 @@ class MaterialController:
             meta_dict.pop("summary")
 
             mc_question_sets = material_table[str(material_id)].mc_question_sets
+            summary = material_table[str(material_id)].summary
 
             with open(str(meta_file_path), "w") as file:
                 json.dump(meta_dict, file, indent=4)
+
+            with open(str(summary_file_path), "w") as file:
+                json.dump(summary.model_dump(), file, indent=4)
 
             for set_id, mc_question_set in mc_question_sets.items():
                 mc_question_file_path = material_folder / Path(f"mc_question_{set_id}.json")

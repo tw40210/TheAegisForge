@@ -71,4 +71,4 @@ def test_local_material_controller_output():
 if __name__ == "__main__":
     test_local_db()
     test_local_material_controller_input()
-    # test_local_material_controller_output()
+    test_local_material_controller_output()
