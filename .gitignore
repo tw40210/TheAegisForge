@@ -12,3 +12,4 @@ src/py_libs/qa_gpt/chat/private_keys.py
 *.pdf
 *.pkl
 /qa_data
+/output_question_data

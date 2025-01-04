@@ -160,7 +160,7 @@ class MaterialController:
                 file_name=file_path.stem,
                 file_suffix=file_path.suffix,
                 file_path=self.archive_path
-                / Path(f"archived_file_{archive_file_id}{file_path.suffix}"),
+                / Path(f"{file_path.stem}_{archive_file_id}{file_path.suffix}"),
                 mc_question_sets={},
             )
 
@@ -202,7 +202,9 @@ class MaterialController:
         material_ids = list(material_table.keys())
 
         for material_id in material_ids:
-            material_folder = output_folder_path / Path(material_table[str(material_id)].file_name)
+            material_folder = output_folder_path / Path(
+                material_table[str(material_id)].file_path.stem
+            )
             material_folder.mkdir(exist_ok=True)
             meta_file_path = material_folder / Path("meta_data.json")
 
