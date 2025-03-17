@@ -7,3 +7,19 @@
 
 # Run
 1. `streamlit run ./src/py_libs/qa_gpt/script/QA_ui.py`
+
+# Object design
+1. DatabaseController
+    * Interact with static storage.
+    * Like `.pkl` file as simple local db
+2. MaterialController
+    * Depend on `DatabaseController`
+    * Fetch materials like `pdf` files.
+    * Generate materials like `output json` files.
+
+3. PreprocessController
+    * Preprocess input text
+4. QAController
+    * Depend on `PreprocessController`
+    * Interact with GPT api
+
