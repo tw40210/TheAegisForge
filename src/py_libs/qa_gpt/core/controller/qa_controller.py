@@ -169,4 +169,7 @@ class PreprocessController:
                 page = pdf_reader.pages[page_num]
                 text += page.extract_text()
 
+            # Post process the parsed text
+            text = text.replace("\n", "")
+
         return text

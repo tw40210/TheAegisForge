@@ -76,7 +76,10 @@ class LocalDatabaseController(BasicDatabaseController):
 
         prev, cur, leaf_key = self._query_path(target_path)
 
-        return cur
+        if isinstance(cur, dict):
+            return cur.copy()
+        else:
+            return cur
 
     def save_data(self, data: dict, target_path: str) -> int:
         prev, _, leaf_key = self._query_path(target_path, create_path=True)
@@ -164,6 +167,7 @@ class MaterialController:
                 / Path(f"{file_path.stem}_{archive_file_id}{file_path.suffix}"),
                 mc_question_sets={},
                 summary=None,
+                is_enabled=True,
             )
 
             db_path = LocalDatabaseController.get_target_path(
@@ -223,6 +227,7 @@ class MaterialController:
             meta_file_path = material_folder / Path("meta_data.json")
             summary_file_path = material_folder / Path("summary.json")
 
+            # Remove mc_question_sets and summary from meta data since we output them separately.
             meta_dict = asdict(material_table[str(material_id)])
             meta_dict["file_path"] = str(meta_dict["file_path"])
             meta_dict.pop("mc_question_sets")
@@ -243,3 +248,24 @@ class MaterialController:
                     json.dump(mc_question_set.model_dump(), file, indent=4)
 
         return 0
+
+    def _get_disabled_file_id_list(self) -> list:
+        all_table_file_id_dict = self.db_controller.get_data(self.db_table_name)
+        return [file_id for file_id, item in all_table_file_id_dict.items() if not item.is_enabled]
+
+    def get_enabled_material_table(self) -> dict:
+        disabled_file_id_list = self._get_disabled_file_id_list()
+        all_table_file_id_dict = self.db_controller.get_data(self.db_table_name)
+
+        for file_id in disabled_file_id_list:
+            all_table_file_id_dict.pop(file_id)
+        return all_table_file_id_dict
+
+    def get_enabled_material_mapping_table(self) -> dict:
+        disabled_file_id_set = set(self._get_disabled_file_id_list())
+        all_mapping_name_dict = self.db_controller.get_data(self.db_mapping_table_name)
+
+        for name, file_id in all_mapping_name_dict.items():
+            if file_id in disabled_file_id_set:
+                all_mapping_name_dict.pop(name)
+        return all_mapping_name_dict
