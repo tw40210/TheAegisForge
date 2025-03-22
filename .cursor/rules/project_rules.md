@@ -1,0 +1,115 @@
+# TheAegisForge Project Rules
+
+## Project Overview
+- **Name**: TheAegisForge
+- **Type**: Python Project
+- **Framework**: FastAPI
+- **Python Version**: 3.12
+- **Root Path**: .
+- **Source Path**: src
+
+## Module Structure
+
+### qa_gpt Module
+- **Type**: Independent Module
+- **Path**: src/py_libs/qa_gpt
+- **Description**: QA GPT module for processing and analyzing materials
+- **Entry Point**: src/py_libs/qa_gpt/script/QA_ui.py
+- **Test Path**: src/py_libs/qa_gpt/tests
+
+#### Dependencies
+- **External**:
+  - streamlit
+  - pytest
+  - pathlib
+  - shutil
+  - pydantic
+- **Internal**: None (Independent Module)
+
+#### Required Exports
+- MaterialController
+- LocalDatabaseController
+- FileMeta
+- MultipleChoiceQuestion
+- MultipleChoiceQuestionSet
+- Summary
+
+## Code Style Rules
+
+### Python Code Style
+- Maximum line length: 100 characters
+- Indentation: 4 spaces
+- Quote style: Double quotes
+- Docstring style: Google style
+
+### Documentation Requirements
+- All modules must have docstrings
+- README.md is required for each module
+- API documentation is required
+- Code comments should explain complex logic
+
+## Testing Rules
+
+### Test Conventions
+- Test files must end with `_test.py`
+- Test functions must start with `test_`
+- Fixture functions must end with `_fixture`
+- Minimum test coverage: 80%
+
+### Coverage Exclusions
+- Test files (*/tests/*)
+- Init files (*/__init__.py)
+- Script files (*/script/*)
+
+## Security Rules
+
+### Private Keys
+- Location: src/py_libs/qa_gpt/chat/private_keys.py
+- Must be git ignored
+- Required for project operation
+
+## Dependency Management
+- Package manager: pip
+- Requirements file: requirements/requirments.txt
+- Virtual environment: py_env
+
+## Module Independence Rules
+
+### qa_gpt Module
+- Cannot import from other project modules
+- Must be self-contained
+- Can only use specified external dependencies
+- Must export all required components
+
+## Version Control Rules
+
+### Git Ignore Patterns
+- Python virtual environments (py_env/)
+- Cache files (__pycache__/, *.pyc, etc.)
+- Build and distribution files
+- Test coverage files
+- Environment files
+- Database files
+- Log files
+
+## Development Workflow
+1. Create feature branch from main
+2. Write tests first
+3. Implement feature
+4. Ensure all tests pass
+5. Update documentation
+6. Create pull request
+7. Code review required
+8. Merge to main after approval
+
+## Error Handling
+- Use custom exceptions for module-specific errors
+- Log all errors with appropriate context
+- Provide meaningful error messages
+- Handle edge cases explicitly
+
+## Performance Guidelines
+- Optimize database queries
+- Cache frequently accessed data
+- Use appropriate data structures
+- Profile code for bottlenecks 

@@ -23,3 +23,32 @@
     * Depend on `PreprocessController`
     * Interact with GPT api
 
+# Testing
+1. Install test dependencies:
+   ```bash
+   pip install pytest
+   ```
+
+2. Run tests:
+   ```bash
+   # Run all tests
+   python -m pytest src/py_libs/qa_gpt/tests/ -v
+
+   # Run specific test file
+   python -m pytest src/py_libs/qa_gpt/tests/material_controller_test.py -v
+
+   # Run specific test
+   python -m pytest src/py_libs/qa_gpt/tests/material_controller_test.py -v -k "test_material_controller_initialization"
+
+   # Run tests with print statements visible
+   python -m pytest src/py_libs/qa_gpt/tests/material_controller_test.py -v -s
+   ```
+
+3. Useful pytest options:
+   - `-v`: Verbose output
+   - `-s`: Show print statements
+   - `-x`: Stop on first failure
+   - `--pdb`: Drop into debugger on failures
+   - `--tb=short`: Shorter traceback format
+   - `--cov=src`: Generate coverage report (requires pytest-cov)
+
