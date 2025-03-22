@@ -247,3 +247,111 @@ def test_output_material_as_folder(test_material_controller, sample_question_set
 
     # Cleanup
     shutil.rmtree(output_dir)
+
+
+def test_remove_material_by_filename(test_material_controller):
+    # Create test data
+    file_name = "test_file"
+    file_meta = FileMeta(
+        id=0,
+        file_name=file_name,
+        file_suffix=".pdf",
+        file_path=test_material_controller.archive_path / f"{file_name}_0.pdf",
+        mc_question_sets={},
+        summary=None,
+    )
+
+    # Save file meta to material table
+    test_material_controller.db_controller.save_data(
+        file_meta,
+        test_material_controller.db_controller.get_target_path(
+            [test_material_controller.db_table_name, "0"]
+        ),
+    )
+
+    # Save mapping
+    test_material_controller.db_controller.save_data(
+        0,
+        test_material_controller.db_controller.get_target_path(
+            [test_material_controller.db_mapping_table_name, file_name]
+        ),
+    )
+
+    # Create a dummy file
+    file_meta["file_path"].touch()
+
+    # Test removing the material
+    result = test_material_controller.remove_material_by_filename(file_name)
+    assert result == 0
+
+    # Verify the file is deleted
+    assert not file_meta["file_path"].exists()
+
+    # Verify material table entry is deleted
+    material_table = test_material_controller.get_material_table()
+    assert "0" not in material_table
+
+    # Verify mapping table entry is deleted
+    mapping_table = test_material_controller.get_material_mapping_table()
+    assert file_name not in mapping_table
+
+
+def test_remove_material_by_filename_not_found(test_material_controller):
+    # Test removing non-existent material
+    result = test_material_controller.remove_material_by_filename("nonexistent_file")
+    assert result == -1
+
+    # Verify no changes were made to the tables
+    material_table = test_material_controller.get_material_table()
+    mapping_table = test_material_controller.get_material_mapping_table()
+    assert material_table == {}
+    assert mapping_table == {}
+
+
+def test_remove_material_by_filename_with_associated_data(
+    test_material_controller, sample_question_set, sample_summary
+):
+    # Create test data with associated question set and summary
+    file_name = "test_file"
+    file_meta = FileMeta(
+        id=0,
+        file_name=file_name,
+        file_suffix=".pdf",
+        file_path=test_material_controller.archive_path / f"{file_name}_0.pdf",
+        mc_question_sets={"0": sample_question_set},
+        summary=sample_summary,
+    )
+
+    # Save file meta to material table
+    test_material_controller.db_controller.save_data(
+        file_meta,
+        test_material_controller.db_controller.get_target_path(
+            [test_material_controller.db_table_name, "0"]
+        ),
+    )
+
+    # Save mapping
+    test_material_controller.db_controller.save_data(
+        0,
+        test_material_controller.db_controller.get_target_path(
+            [test_material_controller.db_mapping_table_name, file_name]
+        ),
+    )
+
+    # Create a dummy file
+    file_meta["file_path"].touch()
+
+    # Test removing the material
+    result = test_material_controller.remove_material_by_filename(file_name)
+    assert result == 0
+
+    # Verify the file is deleted
+    assert not file_meta["file_path"].exists()
+
+    # Verify material table entry is deleted
+    material_table = test_material_controller.get_material_table()
+    assert "0" not in material_table
+
+    # Verify mapping table entry is deleted
+    mapping_table = test_material_controller.get_material_mapping_table()
+    assert file_name not in mapping_table

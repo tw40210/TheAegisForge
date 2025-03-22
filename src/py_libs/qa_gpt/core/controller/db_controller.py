@@ -211,6 +211,53 @@ class MaterialController:
     def get_material_mapping_table(self) -> dict:
         return self.db_controller.get_data(self.db_mapping_table_name)
 
+    def remove_material_by_filename(self, file_name: str) -> int:
+        """Remove a material and its associated data by file name.
+
+        Args:
+            file_name: The name of the file to remove (without extension)
+
+        Returns:
+            int: 0 if successful, -1 if material not found
+
+        Raises:
+            FileNotFoundError: If the physical file cannot be deleted
+        """
+        # Get the material ID from mapping table
+        mapping_table = self.get_material_mapping_table()
+        if file_name not in mapping_table:
+            logger.warning(f"Material with file name '{file_name}' not found")
+            return -1
+
+        material_id = mapping_table[file_name]
+
+        # Get the material metadata
+        material_table = self.get_material_table()
+        if str(material_id) not in material_table:
+            logger.warning(f"Material with ID {material_id} not found in material table")
+            return -1
+
+        file_meta = material_table[str(material_id)]
+
+        # Delete the physical file
+        try:
+            file_meta["file_path"].unlink()
+        except FileNotFoundError:
+            logger.warning(f"Physical file not found at {file_meta['file_path']}")
+
+        # Remove from material table
+        self.db_controller.delete_data(
+            LocalDatabaseController.get_target_path([self.db_table_name, str(material_id)])
+        )
+
+        # Remove from mapping table
+        self.db_controller.delete_data(
+            LocalDatabaseController.get_target_path([self.db_mapping_table_name, file_name])
+        )
+
+        logger.info(f"Successfully removed material '{file_name}' with ID {material_id}")
+        return 0
+
     def output_material_as_folder(self, output_folder_path: Path):
         material_table = self.get_material_table()
         material_ids = list(material_table.keys())
