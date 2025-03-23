@@ -1,25 +1,29 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import TypeVar
 
 import PyPDF2
+from pydantic import BaseModel
 
 from src.py_libs.qa_gpt.chat.chat import (  # get_chat_gpt_response,
     get_chat_gpt_response_structure,
 )
 from src.py_libs.qa_gpt.core.objects.questions import MultipleChoiceQuestionSet
-from src.py_libs.qa_gpt.core.objects.summaries import Summary
+
+T = TypeVar("T", bound=BaseModel)
 
 
 class BaseQAController(ABC):
     @abstractmethod
-    def get_summary(self, file_path: Path) -> Summary:
+    def get_summary(self, file_path: Path, summary_class: type[T]) -> T:
         """Get a summary of the content from a file.
 
         Args:
             file_path (Path): Path to the file to summarize
+            summary_class (Type[T]): The Pydantic model class to use for the summary
 
         Returns:
-            Summary: A structured summary of the content
+            T: A structured summary of the content
         """
         pass
 
@@ -155,12 +159,12 @@ Choice:
             """,
         }
 
-    def get_summary(self, file_path: Path) -> Summary:
+    def get_summary(self, file_path: Path, summary_class: type[T]) -> T:
         material_text = self.preprocess_controller.preprocess(file_path)
         user_input = self.user_input_temp.copy()
         user_input.update({"content": material_text})
         messages = [self.summary_message_temp.copy(), user_input]
-        result = get_chat_gpt_response_structure(messages, res_obj=Summary)
+        result = get_chat_gpt_response_structure(messages, res_obj=summary_class)
         return result
 
     def get_questions(self, file_path: Path) -> MultipleChoiceQuestionSet:

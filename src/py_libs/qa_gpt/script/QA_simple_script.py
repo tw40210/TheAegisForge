@@ -5,6 +5,7 @@ from src.py_libs.qa_gpt.core.controller.db_controller import (
     MaterialController,
 )
 from src.py_libs.qa_gpt.core.controller.qa_controller import QAController
+from src.py_libs.qa_gpt.core.objects.summaries import StandardSummary
 
 
 def fetch_material_add_sets():
@@ -46,7 +47,7 @@ def fetch_material_add_summary():
 
         while file_meta.summary is None:
             print(f"Adding summary to material {file_id}.")
-            summary = qa_cotroller.get_summary(file_meta["file_path"])
+            summary = qa_cotroller.get_summary(file_meta["file_path"], StandardSummary)
             material_controller.append_summary(file_id, summary)
 
 

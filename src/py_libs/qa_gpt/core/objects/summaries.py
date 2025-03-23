@@ -56,11 +56,55 @@ class BulletPoint(BaseModel):
         {split_line}
         """
 
+    @classmethod
+    def model_json_schema(cls):
+        return {
+            "type": "object",
+            "properties": {
+                "subject": {"type": "string"},
+                "description": {"type": "string"},
+                "technical_details": {"type": "string"},
+                "importance_explanation": {"type": "string"},
+                "importance": {"type": "integer"},
+            },
+            "required": [
+                "subject",
+                "description",
+                "technical_details",
+                "importance_explanation",
+                "importance",
+            ],
+        }
+
 
 class Summary(BaseModel):
+    """Standard summary with motivation and bullet points"""
+
+    motivation: Motivation
+    bullet_points: list[BulletPoint]
+
+    def __str__(self):
+        split_line = "=" * 20 + "\n"
+        return f"""
+        {split_line}
+        motivation:{self.motivation}
+        bullet_points:{self.bullet_points}
+        {split_line}
+        """
+
+    @classmethod
+    def model_json_schema(cls):
+        schema = super().model_json_schema()
+        schema["required"] = list(schema["properties"].keys())
+        return schema
+
+
+class StandardSummary(Summary):
+    """Standard summary type with motivation, conclusion and bullet points"""
+
     motivation: Motivation
     conclusion: Conclusion
-    content_bullet_points: list[BulletPoint]
+    bullet_points: list[BulletPoint]
 
     def __str__(self):
         split_line = "=" * 20 + "\n"
@@ -68,6 +112,95 @@ class Summary(BaseModel):
         {split_line}
         motivation:{self.motivation}
         conclusion:{self.conclusion}
-        content_bullet_points:{self.content_bullet_points}
+        bullet_points:{self.bullet_points}
         {split_line}
         """
+
+    def model_dump(self):
+        return {
+            "summary_type": "standard",
+            "motivation": self.motivation.model_dump(),
+            "conclusion": self.conclusion.model_dump(),
+            "bullet_points": [bp.model_dump() for bp in self.bullet_points],
+        }
+
+
+class TechnicalSummary(BaseModel):
+    """Summary specifically for technical documentation"""
+
+    overview: str
+    key_concepts: list[str]
+    technical_details: dict[str, str]
+    implementation_steps: list[str]
+    requirements: dict[str, str]
+    limitations: list[str]
+
+    def __str__(self):
+        split_line = "=" * 20 + "\n"
+        return f"""
+        {split_line}
+        overview:{self.overview}
+        key_concepts:{self.key_concepts}
+        technical_details:{self.technical_details}
+        implementation_steps:{self.implementation_steps}
+        requirements:{self.requirements}
+        limitations:{self.limitations}
+        {split_line}
+        """
+
+    def model_dump(self):
+        return {
+            "overview": self.overview,
+            "key_concepts": self.key_concepts,
+            "technical_details": self.technical_details,
+            "implementation_steps": self.implementation_steps,
+            "requirements": self.requirements,
+            "limitations": self.limitations,
+        }
+
+    @classmethod
+    def model_json_schema(cls):
+        return {
+            "type": "object",
+            "title": "TechnicalSummary",
+            "description": "Summary specifically for technical documentation",
+            "properties": {
+                "overview": {
+                    "type": "string",
+                    "description": "A high-level overview of the technical content",
+                },
+                "key_concepts": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of key technical concepts",
+                },
+                "technical_details": {
+                    "type": "object",
+                    "additionalProperties": {"type": "string"},
+                    "description": "Technical details as key-value pairs",
+                },
+                "implementation_steps": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of implementation steps",
+                },
+                "requirements": {
+                    "type": "object",
+                    "additionalProperties": {"type": "string"},
+                    "description": "Requirements as key-value pairs",
+                },
+                "limitations": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of limitations",
+                },
+            },
+            "required": [
+                "overview",
+                "key_concepts",
+                "technical_details",
+                "implementation_steps",
+                "requirements",
+                "limitations",
+            ],
+        }

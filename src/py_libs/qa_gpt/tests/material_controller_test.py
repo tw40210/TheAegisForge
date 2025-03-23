@@ -1,3 +1,4 @@
+import json
 import shutil
 from pathlib import Path
 
@@ -17,7 +18,8 @@ from src.py_libs.qa_gpt.core.objects.summaries import (
     BulletPoint,
     Conclusion,
     Motivation,
-    Summary,
+    StandardSummary,
+    TechnicalSummary,
 )
 
 
@@ -72,12 +74,12 @@ def sample_summary():
         description="Test motivation",
         problem_to_solve="Test problem",
         how_to_solve="Test solution",
-        why_can_be_solved="Test reasoning",
+        why_can_be_solved="Test why",
     )
     conclusion = Conclusion(
         description="Test conclusion",
         problem_to_solve="Test problem",
-        how_much_is_solved="Test progress",
+        how_much_is_solved="Test solution",
         contribution="Test contribution",
     )
     bullet_point = BulletPoint(
@@ -87,8 +89,39 @@ def sample_summary():
         importance_explanation="Test importance",
         importance=1,
     )
-    return Summary(
-        motivation=motivation, conclusion=conclusion, content_bullet_points=[bullet_point]
+    return StandardSummary(
+        motivation=motivation, conclusion=conclusion, bullet_points=[bullet_point]
+    )
+
+
+@pytest.fixture
+def sample_technical_summary():
+    return TechnicalSummary(
+        overview="This technical document describes the implementation of a new machine learning algorithm",
+        key_concepts=["Neural Networks", "Gradient Descent", "Backpropagation", "Loss Functions"],
+        technical_details={
+            "model_architecture": "Multi-layer perceptron with 3 hidden layers",
+            "activation_function": "ReLU for hidden layers, Softmax for output",
+            "optimization": "Adam optimizer with learning rate 0.001",
+            "batch_size": "32 samples per batch",
+        },
+        implementation_steps=[
+            "Data preprocessing and normalization",
+            "Model architecture definition",
+            "Training loop implementation",
+            "Validation and testing procedures",
+        ],
+        requirements={
+            "python": "3.8+",
+            "tensorflow": "2.4+",
+            "cuda": "11.0+",
+            "ram": "16GB minimum",
+        },
+        limitations=[
+            "High computational resource requirements",
+            "Limited to supervised learning tasks",
+            "Requires large labeled dataset",
+        ],
     )
 
 
@@ -173,6 +206,48 @@ def test_append_summary(test_material_controller, sample_summary):
         )
     )
     assert updated_meta["summary"] == sample_summary
+    assert isinstance(updated_meta["summary"], StandardSummary)
+    assert updated_meta["summary"].motivation.description == "Test motivation"
+    assert updated_meta["summary"].conclusion.description == "Test conclusion"
+    assert len(updated_meta["summary"].bullet_points) == 1
+    assert updated_meta["summary"].bullet_points[0].description == "Test description"
+
+
+def test_append_technical_summary(test_material_controller, sample_technical_summary):
+    # First create a file meta
+    file_meta = FileMeta(
+        id=0,
+        file_name="test_file",
+        file_suffix=".pdf",
+        file_path=Path("test_file.pdf"),
+        mc_question_sets={},
+        summary=None,
+    )
+    test_material_controller.db_controller.save_data(
+        file_meta,
+        test_material_controller.db_controller.get_target_path(
+            [test_material_controller.db_table_name, "0"]
+        ),
+    )
+
+    # Test appending technical summary
+    result = test_material_controller.append_summary(0, sample_technical_summary)
+    assert result == 0
+
+    # Verify the technical summary was saved
+    updated_meta = test_material_controller.db_controller.get_data(
+        test_material_controller.db_controller.get_target_path(
+            [test_material_controller.db_table_name, "0"]
+        )
+    )
+    assert updated_meta["summary"] == sample_technical_summary
+    assert isinstance(updated_meta["summary"], TechnicalSummary)
+    assert (
+        updated_meta["summary"].overview
+        == "This technical document describes the implementation of a new machine learning algorithm"
+    )
+    assert "Neural Networks" in updated_meta["summary"].key_concepts
+    assert "model_architecture" in updated_meta["summary"].technical_details
 
 
 def test_get_material_table(test_material_controller):
@@ -244,6 +319,69 @@ def test_output_material_as_folder(test_material_controller, sample_question_set
     assert (material_dir / "meta_data.json").exists()
     assert (material_dir / "summary.json").exists()
     assert (material_dir / "mc_question_0.json").exists()
+
+    # Verify summary.json contains standard summary data
+    with open(material_dir / "summary.json") as f:
+        summary_data = json.load(f)
+        assert "summary_type" in summary_data
+        assert summary_data["summary_type"] == "standard"
+        assert "motivation" in summary_data
+        assert "conclusion" in summary_data
+        assert "bullet_points" in summary_data
+        assert len(summary_data["bullet_points"]) == 1
+        assert summary_data["motivation"]["description"] == "Test motivation"
+        assert summary_data["conclusion"]["description"] == "Test conclusion"
+
+    # Cleanup
+    shutil.rmtree(output_dir)
+
+
+def test_output_material_with_technical_summary(test_material_controller, sample_technical_summary):
+    # Create test data with technical summary
+    file_meta = FileMeta(
+        id=0,
+        file_name="test_file",
+        file_suffix=".pdf",
+        file_path=Path("test_file.pdf"),
+        mc_question_sets={},
+        summary=sample_technical_summary,
+    )
+    test_material_controller.db_controller.save_data(
+        file_meta,
+        test_material_controller.db_controller.get_target_path(
+            [test_material_controller.db_table_name, "0"]
+        ),
+    )
+
+    # Create output directory
+    output_dir = Path("test_output")
+    output_dir.mkdir(exist_ok=True)
+
+    # Test output
+    result = test_material_controller.output_material_as_folder(output_dir)
+    assert result == 0
+
+    # Verify output files
+    material_dir = output_dir / "test_file"
+    assert material_dir.exists()
+    assert (material_dir / "meta_data.json").exists()
+    assert (material_dir / "summary.json").exists()
+
+    # Verify summary.json contains technical summary data
+    with open(material_dir / "summary.json") as f:
+        summary_data = json.load(f)
+        assert "overview" in summary_data
+        assert "key_concepts" in summary_data
+        assert "technical_details" in summary_data
+        assert "implementation_steps" in summary_data
+        assert "requirements" in summary_data
+        assert "limitations" in summary_data
+        assert (
+            summary_data["overview"]
+            == "This technical document describes the implementation of a new machine learning algorithm"
+        )
+        assert "Neural Networks" in summary_data["key_concepts"]
+        assert "model_architecture" in summary_data["technical_details"]
 
     # Cleanup
     shutil.rmtree(output_dir)
@@ -320,6 +458,53 @@ def test_remove_material_by_filename_with_associated_data(
         file_path=test_material_controller.archive_path / f"{file_name}_0.pdf",
         mc_question_sets={"0": sample_question_set},
         summary=sample_summary,
+    )
+
+    # Save file meta to material table
+    test_material_controller.db_controller.save_data(
+        file_meta,
+        test_material_controller.db_controller.get_target_path(
+            [test_material_controller.db_table_name, "0"]
+        ),
+    )
+
+    # Save mapping
+    test_material_controller.db_controller.save_data(
+        0,
+        test_material_controller.db_controller.get_target_path(
+            [test_material_controller.db_mapping_table_name, file_name]
+        ),
+    )
+
+    # Create a dummy file
+    file_meta["file_path"].touch()
+
+    # Test removing the material
+    result = test_material_controller.remove_material_by_filename(file_name)
+    assert result == 0
+
+    # Verify the file is deleted
+    assert not file_meta["file_path"].exists()
+
+    # Verify material table entry is deleted
+    material_table = test_material_controller.get_material_table()
+    assert "0" not in material_table
+
+    # Verify mapping table entry is deleted
+    mapping_table = test_material_controller.get_material_mapping_table()
+    assert file_name not in mapping_table
+
+
+def test_remove_material_with_technical_summary(test_material_controller, sample_technical_summary):
+    # Create test data with technical summary
+    file_name = "test_file"
+    file_meta = FileMeta(
+        id=0,
+        file_name=file_name,
+        file_suffix=".pdf",
+        file_path=test_material_controller.archive_path / f"{file_name}_0.pdf",
+        mc_question_sets={},
+        summary=sample_technical_summary,
     )
 
     # Save file meta to material table
