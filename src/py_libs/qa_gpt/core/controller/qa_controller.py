@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from pathlib import Path
 
 import PyPDF2
@@ -9,7 +10,33 @@ from src.py_libs.qa_gpt.core.objects.questions import MultipleChoiceQuestionSet
 from src.py_libs.qa_gpt.core.objects.summaries import Summary
 
 
-class QAController:
+class BaseQAController(ABC):
+    @abstractmethod
+    def get_summary(self, file_path: Path) -> Summary:
+        """Get a summary of the content from a file.
+
+        Args:
+            file_path (Path): Path to the file to summarize
+
+        Returns:
+            Summary: A structured summary of the content
+        """
+        pass
+
+    @abstractmethod
+    def get_questions(self, file_path: Path) -> MultipleChoiceQuestionSet:
+        """Generate questions based on the content from a file.
+
+        Args:
+            file_path (Path): Path to the file to generate questions from
+
+        Returns:
+            MultipleChoiceQuestionSet: A set of multiple choice questions
+        """
+        pass
+
+
+class QAController(BaseQAController):
     def __init__(self) -> None:
         self.preprocess_controller = PreprocessController()
         self.user_input_temp = {"role": "user", "content": "how can I solve 8x + 7 = -23"}
@@ -128,22 +155,20 @@ Choice:
             """,
         }
 
-    def get_summary(self, file_path: Path):
+    def get_summary(self, file_path: Path) -> Summary:
         material_text = self.preprocess_controller.preprocess(file_path)
         user_input = self.user_input_temp.copy()
         user_input.update({"content": material_text})
         messages = [self.summary_message_temp.copy(), user_input]
         result = get_chat_gpt_response_structure(messages, res_obj=Summary)
-
         return result
 
-    def get_questions(self, file_path: Path):
+    def get_questions(self, file_path: Path) -> MultipleChoiceQuestionSet:
         material_text = self.preprocess_controller.preprocess(file_path)
         user_input = self.user_input_temp.copy()
         user_input.update({"content": material_text})
         messages = [self.question_message_temp.copy(), user_input]
         result = get_chat_gpt_response_structure(messages, res_obj=MultipleChoiceQuestionSet)
-
         return result
 
 
@@ -156,7 +181,6 @@ class PreprocessController:
         return output
 
     def _pdf_to_text(self, pdf_path: Path):
-
         # Open the PDF file in read-binary mode
         with open(str(pdf_path), "rb") as pdf_file:
             # Create a PdfReader object instead of PdfFileReader
