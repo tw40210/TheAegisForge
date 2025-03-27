@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from src.py_libs.qa_gpt.core.controller.qa_controller import QAController
+from src.py_libs.qa_gpt.core.objects.summaries import StandardSummary
 
 
 def test_get_summary():
@@ -8,7 +9,7 @@ def test_get_summary():
 
     qa_cotroller = QAController()
     _ = qa_cotroller.preprocess_controller.preprocess(test_file_path)
-    _ = qa_cotroller.get_summary(test_file_path)
+    _ = qa_cotroller.get_summary(test_file_path, StandardSummary)
     print()
 
 

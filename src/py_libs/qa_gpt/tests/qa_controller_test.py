@@ -13,7 +13,7 @@ from src.py_libs.qa_gpt.core.objects.summaries import (
     BulletPoint,
     Conclusion,
     Motivation,
-    Summary,
+    StandardSummary,
 )
 
 
@@ -32,7 +32,7 @@ def test_file_path():
 
 @pytest.fixture
 def mock_summary():
-    return Summary(
+    return StandardSummary(
         motivation=Motivation(
             description="Test description",
             problem_to_solve="Test problem",
@@ -45,7 +45,7 @@ def mock_summary():
             how_much_is_solved="Test result",
             contribution="Test contribution",
         ),
-        content_bullet_points=[
+        bullet_points=[
             BulletPoint(
                 subject="Test subject",
                 description="Test description",
@@ -146,10 +146,10 @@ def test_get_summary(qa_controller, test_file_path, mock_summary, mocker):
     mock_get_response.return_value = mock_summary
 
     # Test
-    result = qa_controller.get_summary(test_file_path)
+    result = qa_controller.get_summary(test_file_path, StandardSummary)
 
     # Assertions
-    assert isinstance(result, Summary)
+    assert isinstance(result, StandardSummary)
     assert result == mock_summary
     mock_get_response.assert_called_once()
     qa_controller.preprocess_controller._pdf_to_text.assert_called_once_with(test_file_path)
@@ -201,7 +201,7 @@ def test_preprocess_integration(qa_controller, test_file_path, mocker):
     mock_preprocess.return_value = "Test content"
 
     # Test
-    qa_controller.get_summary(test_file_path)
+    qa_controller.get_summary(test_file_path, StandardSummary)
 
     # Assertions
     mock_preprocess.assert_called_once_with(test_file_path)

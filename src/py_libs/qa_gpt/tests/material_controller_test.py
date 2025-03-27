@@ -155,7 +155,7 @@ def test_append_mc_question_set(test_material_controller, sample_question_set):
         file_suffix=".pdf",
         file_path=Path("test_file.pdf"),
         mc_question_sets={},
-        summary=None,
+        summaries={},
     )
     test_material_controller.db_controller.save_data(
         file_meta,
@@ -186,7 +186,7 @@ def test_append_summary(test_material_controller, sample_summary):
         file_suffix=".pdf",
         file_path=Path("test_file.pdf"),
         mc_question_sets={},
-        summary=None,
+        summaries={},
     )
     test_material_controller.db_controller.save_data(
         file_meta,
@@ -205,12 +205,16 @@ def test_append_summary(test_material_controller, sample_summary):
             [test_material_controller.db_table_name, "0"]
         )
     )
-    assert updated_meta["summary"] == sample_summary
-    assert isinstance(updated_meta["summary"], StandardSummary)
-    assert updated_meta["summary"].motivation.description == "Test motivation"
-    assert updated_meta["summary"].conclusion.description == "Test conclusion"
-    assert len(updated_meta["summary"].bullet_points) == 1
-    assert updated_meta["summary"].bullet_points[0].description == "Test description"
+    assert "StandardSummary" in updated_meta["summaries"]
+    assert updated_meta["summaries"]["StandardSummary"] == sample_summary
+    assert isinstance(updated_meta["summaries"]["StandardSummary"], StandardSummary)
+    assert updated_meta["summaries"]["StandardSummary"].motivation.description == "Test motivation"
+    assert updated_meta["summaries"]["StandardSummary"].conclusion.description == "Test conclusion"
+    assert len(updated_meta["summaries"]["StandardSummary"].bullet_points) == 1
+    assert (
+        updated_meta["summaries"]["StandardSummary"].bullet_points[0].description
+        == "Test description"
+    )
 
 
 def test_append_technical_summary(test_material_controller, sample_technical_summary):
@@ -221,7 +225,7 @@ def test_append_technical_summary(test_material_controller, sample_technical_sum
         file_suffix=".pdf",
         file_path=Path("test_file.pdf"),
         mc_question_sets={},
-        summary=None,
+        summaries={},
     )
     test_material_controller.db_controller.save_data(
         file_meta,
@@ -240,14 +244,53 @@ def test_append_technical_summary(test_material_controller, sample_technical_sum
             [test_material_controller.db_table_name, "0"]
         )
     )
-    assert updated_meta["summary"] == sample_technical_summary
-    assert isinstance(updated_meta["summary"], TechnicalSummary)
+    assert "TechnicalSummary" in updated_meta["summaries"]
+    assert updated_meta["summaries"]["TechnicalSummary"] == sample_technical_summary
+    assert isinstance(updated_meta["summaries"]["TechnicalSummary"], TechnicalSummary)
     assert (
-        updated_meta["summary"].overview
+        updated_meta["summaries"]["TechnicalSummary"].overview
         == "This technical document describes the implementation of a new machine learning algorithm"
     )
-    assert "Neural Networks" in updated_meta["summary"].key_concepts
-    assert "model_architecture" in updated_meta["summary"].technical_details
+    assert "Neural Networks" in updated_meta["summaries"]["TechnicalSummary"].key_concepts
+    assert "model_architecture" in updated_meta["summaries"]["TechnicalSummary"].technical_details
+
+
+def test_append_multiple_summaries(
+    test_material_controller, sample_summary, sample_technical_summary
+):
+    # First create a file meta
+    file_meta = FileMeta(
+        id=0,
+        file_name="test_file",
+        file_suffix=".pdf",
+        file_path=Path("test_file.pdf"),
+        mc_question_sets={},
+        summaries={},
+    )
+    test_material_controller.db_controller.save_data(
+        file_meta,
+        test_material_controller.db_controller.get_target_path(
+            [test_material_controller.db_table_name, "0"]
+        ),
+    )
+
+    # Test appending both summaries
+    result1 = test_material_controller.append_summary(0, sample_summary)
+    result2 = test_material_controller.append_summary(0, sample_technical_summary)
+    assert result1 == 0
+    assert result2 == 0
+
+    # Verify both summaries were saved
+    updated_meta = test_material_controller.db_controller.get_data(
+        test_material_controller.db_controller.get_target_path(
+            [test_material_controller.db_table_name, "0"]
+        )
+    )
+    assert len(updated_meta["summaries"]) == 2
+    assert "StandardSummary" in updated_meta["summaries"]
+    assert "TechnicalSummary" in updated_meta["summaries"]
+    assert isinstance(updated_meta["summaries"]["StandardSummary"], StandardSummary)
+    assert isinstance(updated_meta["summaries"]["TechnicalSummary"], TechnicalSummary)
 
 
 def test_get_material_table(test_material_controller):
@@ -258,7 +301,7 @@ def test_get_material_table(test_material_controller):
         file_suffix=".pdf",
         file_path=Path("test_file.pdf"),
         mc_question_sets={},
-        summary=None,
+        summaries={},
     )
     test_material_controller.db_controller.save_data(
         file_meta,
@@ -296,7 +339,7 @@ def test_output_material_as_folder(test_material_controller, sample_question_set
         file_suffix=".pdf",
         file_path=Path("test_file.pdf"),
         mc_question_sets={"0": sample_question_set},
-        summary=sample_summary,
+        summaries={"StandardSummary": sample_summary},
     )
     test_material_controller.db_controller.save_data(
         file_meta,
@@ -317,11 +360,11 @@ def test_output_material_as_folder(test_material_controller, sample_question_set
     material_dir = output_dir / "test_file"
     assert material_dir.exists()
     assert (material_dir / "meta_data.json").exists()
-    assert (material_dir / "summary.json").exists()
+    assert (material_dir / "summary_StandardSummary.json").exists()
     assert (material_dir / "mc_question_0.json").exists()
 
     # Verify summary.json contains standard summary data
-    with open(material_dir / "summary.json") as f:
+    with open(material_dir / "summary_StandardSummary.json") as f:
         summary_data = json.load(f)
         assert "summary_type" in summary_data
         assert summary_data["summary_type"] == "standard"
@@ -344,7 +387,7 @@ def test_output_material_with_technical_summary(test_material_controller, sample
         file_suffix=".pdf",
         file_path=Path("test_file.pdf"),
         mc_question_sets={},
-        summary=sample_technical_summary,
+        summaries={"TechnicalSummary": sample_technical_summary},
     )
     test_material_controller.db_controller.save_data(
         file_meta,
@@ -365,10 +408,10 @@ def test_output_material_with_technical_summary(test_material_controller, sample
     material_dir = output_dir / "test_file"
     assert material_dir.exists()
     assert (material_dir / "meta_data.json").exists()
-    assert (material_dir / "summary.json").exists()
+    assert (material_dir / "summary_TechnicalSummary.json").exists()
 
     # Verify summary.json contains technical summary data
-    with open(material_dir / "summary.json") as f:
+    with open(material_dir / "summary_TechnicalSummary.json") as f:
         summary_data = json.load(f)
         assert "overview" in summary_data
         assert "key_concepts" in summary_data
@@ -396,7 +439,7 @@ def test_remove_material_by_filename(test_material_controller):
         file_suffix=".pdf",
         file_path=test_material_controller.archive_path / f"{file_name}_0.pdf",
         mc_question_sets={},
-        summary=None,
+        summaries={},
     )
 
     # Save file meta to material table
@@ -457,7 +500,7 @@ def test_remove_material_by_filename_with_associated_data(
         file_suffix=".pdf",
         file_path=test_material_controller.archive_path / f"{file_name}_0.pdf",
         mc_question_sets={"0": sample_question_set},
-        summary=sample_summary,
+        summaries={"StandardSummary": sample_summary},
     )
 
     # Save file meta to material table
@@ -504,7 +547,7 @@ def test_remove_material_with_technical_summary(test_material_controller, sample
         file_suffix=".pdf",
         file_path=test_material_controller.archive_path / f"{file_name}_0.pdf",
         mc_question_sets={},
-        summary=sample_technical_summary,
+        summaries={"TechnicalSummary": sample_technical_summary},
     )
 
     # Save file meta to material table

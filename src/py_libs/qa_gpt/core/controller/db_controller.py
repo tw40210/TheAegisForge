@@ -9,7 +9,7 @@ from pathlib import Path
 from src.py_libs.qa_gpt.core.constant import LOCAL_DB_FOLDER, MATERIAL_FOLDER
 from src.py_libs.qa_gpt.core.objects.materials import FileMeta
 from src.py_libs.qa_gpt.core.objects.questions import MultipleChoiceQuestionSet
-from src.py_libs.qa_gpt.core.objects.summaries import Summary
+from src.py_libs.qa_gpt.core.objects.summaries import StandardSummary, TechnicalSummary
 
 logger = logging.getLogger(__name__)
 
@@ -163,7 +163,7 @@ class MaterialController:
                 file_path=self.archive_path
                 / Path(f"{file_path.stem}_{archive_file_id}{file_path.suffix}"),
                 mc_question_sets={},
-                summary=None,
+                summaries={},
             )
 
             db_path = LocalDatabaseController.get_target_path(
@@ -197,9 +197,10 @@ class MaterialController:
 
         return 0
 
-    def append_summary(self, file_id: int, summary: Summary) -> int:
+    def append_summary(self, file_id: int, summary: StandardSummary | TechnicalSummary) -> int:
         file_meta, target_path = self._get_material_filemeta(file_id)
-        file_meta["summary"] = summary
+        summary_type = summary.__class__.__name__
+        file_meta["summaries"][summary_type] = summary
 
         self.db_controller.save_data(file_meta, target_path)
 
@@ -273,16 +274,18 @@ class MaterialController:
             meta_dict = asdict(material_table[str(material_id)])
             meta_dict["file_path"] = str(meta_dict["file_path"])
             meta_dict.pop("mc_question_sets")
-            meta_dict.pop("summary")
+            meta_dict.pop("summaries")
 
             mc_question_sets = material_table[str(material_id)].mc_question_sets
-            summary = material_table[str(material_id)].summary
+            summaries = material_table[str(material_id)].summaries
 
             with open(str(meta_file_path), "w") as file:
                 json.dump(meta_dict, file, indent=4)
 
-            with open(str(summary_file_path), "w") as file:
-                json.dump(summary.model_dump(), file, indent=4)
+            for summary_type, summary in summaries.items():
+                summary_file_path = material_folder / Path(f"summary_{summary_type}.json")
+                with open(str(summary_file_path), "w") as file:
+                    json.dump(summary.model_dump(), file, indent=4)
 
             for set_id, mc_question_set in mc_question_sets.items():
                 mc_question_file_path = material_folder / Path(f"mc_question_{set_id}.json")

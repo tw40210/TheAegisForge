@@ -77,8 +77,8 @@ class BulletPoint(BaseModel):
         }
 
 
-class Summary(BaseModel):
-    """Standard summary with motivation and bullet points"""
+class BaseSummary(BaseModel):
+    """Base summary class with motivation and bullet points"""
 
     motivation: Motivation
     bullet_points: list[BulletPoint]
@@ -99,7 +99,7 @@ class Summary(BaseModel):
         return schema
 
 
-class StandardSummary(Summary):
+class StandardSummary(BaseSummary):
     """Standard summary type with motivation, conclusion and bullet points"""
 
     motivation: Motivation

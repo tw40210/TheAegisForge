@@ -1,6 +1,7 @@
 import shutil
 from pathlib import Path
 
+from src.py_libs.qa_gpt.core.constant import LOCAL_DB_FOLDER
 from src.py_libs.qa_gpt.core.controller.db_controller import (
     LocalDatabaseController,
     MaterialController,
@@ -53,7 +54,16 @@ def test_local_material_controller_output():
     test_db_name = "test_local_output_db"
     test_archive_name = "test_archive"
     test_output_folder_path = Path("./test_output_question_data")
+
+    # Clean up any existing output directory
+    if test_output_folder_path.exists():
+        shutil.rmtree(test_output_folder_path)
     test_output_folder_path.mkdir(exist_ok=True)
+
+    # Clean up any existing database files
+    db_path = Path(f"{LOCAL_DB_FOLDER}/{test_db_name}.pkl")
+    if db_path.exists():
+        db_path.unlink()
 
     test_local_db_controller = LocalDatabaseController(db_name=test_db_name)
     test_material_controller = MaterialController(
@@ -65,7 +75,10 @@ def test_local_material_controller_output():
         list(test_output_folder_path.iterdir())
     )
 
+    # Clean up
     shutil.rmtree(test_output_folder_path)
+    if db_path.exists():
+        db_path.unlink()
 
 
 if __name__ == "__main__":
