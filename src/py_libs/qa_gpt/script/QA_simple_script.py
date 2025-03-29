@@ -5,7 +5,7 @@ from src.py_libs.qa_gpt.core.controller.db_controller import (
     MaterialController,
 )
 from src.py_libs.qa_gpt.core.controller.qa_controller import QAController
-from src.py_libs.qa_gpt.core.objects.summaries import StandardSummary
+from src.py_libs.qa_gpt.core.objects.summaries import StandardSummary, TechnicalSummary
 
 
 def fetch_material_add_sets():
@@ -24,11 +24,16 @@ def fetch_material_add_sets():
         print(
             f"Material {file_id} originally have {len(file_meta.mc_question_sets)} mc_questions sets."
         )
-        while len(file_meta.mc_question_sets) < 2:
+        current_num_sets = len(file_meta.mc_question_sets)
+        while current_num_sets < 2:
 
             mc_question_set = qa_cotroller.get_questions(file_meta["file_path"])
             material_controller.append_mc_question_set(file_id, mc_question_set)
-            print(f"Material {file_id} have {len(file_meta.mc_question_sets)} questions now.")
+            updated_num_sets = len(file_meta.mc_question_sets)
+            print(f"Material {file_id} have {updated_num_sets} questions now.")
+
+            assert updated_num_sets == current_num_sets + 1
+            current_num_sets = updated_num_sets
 
 
 def fetch_material_add_summary():
@@ -45,10 +50,12 @@ def fetch_material_add_summary():
 
     for file_id, file_meta in material_controller.get_material_table().items():
 
-        while file_meta.summary is None:
+        while len(file_meta.summaries) < 2:
             print(f"Adding summary to material {file_id}.")
-            summary = qa_cotroller.get_summary(file_meta["file_path"], StandardSummary)
-            material_controller.append_summary(file_id, summary)
+            std_summary = qa_cotroller.get_summary(file_meta["file_path"], StandardSummary)
+            tech_summary = qa_cotroller.get_summary(file_meta["file_path"], TechnicalSummary)
+            material_controller.append_summary(file_id, std_summary)
+            material_controller.append_summary(file_id, tech_summary)
 
 
 def output_question_data():
