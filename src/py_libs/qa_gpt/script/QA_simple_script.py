@@ -49,13 +49,17 @@ def fetch_material_add_summary():
     material_controller.fetch_material_folder(source_folder_path)
 
     for file_id, file_meta in material_controller.get_material_table().items():
-
-        while len(file_meta.summaries) < 2:
+        current_num_summaries = len(file_meta.summaries)
+        adding_summary_objects = [StandardSummary, TechnicalSummary]
+        while len(file_meta.summaries) < len(adding_summary_objects):
             print(f"Adding summary to material {file_id}.")
-            std_summary = qa_cotroller.get_summary(file_meta["file_path"], StandardSummary)
-            tech_summary = qa_cotroller.get_summary(file_meta["file_path"], TechnicalSummary)
-            material_controller.append_summary(file_id, std_summary)
-            material_controller.append_summary(file_id, tech_summary)
+            for summary_object in adding_summary_objects:
+                summary = qa_cotroller.get_summary(file_meta["file_path"], summary_object)
+                material_controller.append_summary(file_id, summary)
+            updated_num_summaries = len(file_meta.summaries)
+
+            assert updated_num_summaries > current_num_summaries
+            current_num_summaries = updated_num_summaries
 
 
 def output_question_data():

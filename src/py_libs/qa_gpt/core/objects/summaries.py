@@ -130,9 +130,9 @@ class TechnicalSummary(BaseModel):
 
     overview: str
     key_concepts: list[str]
-    technical_details: dict[str, str]
+    technical_details: list[str]
     implementation_steps: list[str]
-    requirements: dict[str, str]
+    requirements: list[str]
     limitations: list[str]
 
     def __str__(self):
@@ -175,9 +175,9 @@ class TechnicalSummary(BaseModel):
                     "description": "List of key technical concepts",
                 },
                 "technical_details": {
-                    "type": "object",
-                    "additionalProperties": {"type": "string"},
-                    "description": "Technical details as key-value pairs",
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of technical details",
                 },
                 "implementation_steps": {
                     "type": "array",
@@ -185,9 +185,9 @@ class TechnicalSummary(BaseModel):
                     "description": "List of implementation steps",
                 },
                 "requirements": {
-                    "type": "object",
-                    "additionalProperties": {"type": "string"},
-                    "description": "Requirements as key-value pairs",
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of requirements",
                 },
                 "limitations": {
                     "type": "array",

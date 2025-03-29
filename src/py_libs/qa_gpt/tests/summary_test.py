@@ -53,24 +53,24 @@ def mock_technical_summary():
     return TechnicalSummary(
         overview="This technical document describes the implementation of a new machine learning algorithm",
         key_concepts=["Neural Networks", "Gradient Descent", "Backpropagation", "Loss Functions"],
-        technical_details={
-            "model_architecture": "Multi-layer perceptron with 3 hidden layers",
-            "activation_function": "ReLU for hidden layers, Softmax for output",
-            "optimization": "Adam optimizer with learning rate 0.001",
-            "batch_size": "32 samples per batch",
-        },
+        technical_details=[
+            "Model architecture: Multi-layer perceptron with 3 hidden layers",
+            "Activation function: ReLU for hidden layers, Softmax for output",
+            "Optimization: Adam optimizer with learning rate 0.001",
+            "Batch size: 32 samples per batch",
+        ],
         implementation_steps=[
             "Data preprocessing and normalization",
             "Model architecture definition",
             "Training loop implementation",
             "Validation and testing procedures",
         ],
-        requirements={
-            "python": "3.8+",
-            "tensorflow": "2.4+",
-            "cuda": "11.0+",
-            "ram": "16GB minimum",
-        },
+        requirements=[
+            "Python: 3.8+",
+            "TensorFlow: 2.4+",
+            "CUDA: 11.0+",
+            "RAM: 16GB minimum",
+        ],
         limitations=[
             "High computational resource requirements",
             "Limited to supervised learning tasks",
@@ -117,9 +117,9 @@ def test_get_technical_summary(mock_get_response, qa_controller, mock_technical_
     assert isinstance(result, TechnicalSummary)
     assert result.overview.startswith("This technical document")
     assert "Neural Networks" in result.key_concepts
-    assert "model_architecture" in result.technical_details
+    assert any("Model architecture:" in detail for detail in result.technical_details)
     assert len(result.implementation_steps) == 4
-    assert "python" in result.requirements
+    assert any("Python:" in req for req in result.requirements)
     assert len(result.limitations) == 3
 
 

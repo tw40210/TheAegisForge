@@ -97,9 +97,9 @@ def test_fetch_material_add_summary_flow(
     technical_summary = TechnicalSummary(
         overview="Test overview",
         key_concepts=["concept1", "concept2"],
-        technical_details={"detail1": "value1"},
+        technical_details=["Detail 1: value1"],
         implementation_steps=["step1", "step2"],
-        requirements={"req1": "value1"},
+        requirements=["Requirement 1: value1"],
         limitations=["limit1"],
     )
 
@@ -224,9 +224,9 @@ def test_full_script_flow(
     technical_summary = TechnicalSummary(
         overview="Test overview",
         key_concepts=["concept1", "concept2"],
-        technical_details={"detail1": "value1"},
+        technical_details=["Detail 1: value1"],
         implementation_steps=["step1", "step2"],
-        requirements={"req1": "value1"},
+        requirements=["Requirement 1: value1"],
         limitations=["limit1"],
     )
 
