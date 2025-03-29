@@ -38,7 +38,6 @@ def display_question(question, options, question_key):
 # Set wide mode
 st.set_page_config(layout="wide")
 _, col1, _, col2, _ = st.columns([1, 4, 1, 6, 1])
-summary = None
 
 with col1:
     st.header("Material selection")
@@ -69,9 +68,7 @@ with col1:
     st.write("---")
     if selected_file is not None:
         file_path = os.path.join(material_folder_path, selected_file)
-        summary_path = os.path.join(material_folder_path, "summary.json")
         questions = load_json_from_file(file_path)
-        summary = load_json_from_file(summary_path)
 
         user_selections = []
 
@@ -108,8 +105,17 @@ with col1:
 
 with col2:
     st.header("Material summary")
-    if summary is not None:
-        st.json(json.dumps(summary, indent=4))
-        # st.code(json.dumps(summary, indent=4), language="json")
+    if selected_material:
+        material_folder_path = os.path.join(folder_path, selected_material)
+        summary_files = [f for f in os.listdir(material_folder_path) if f.startswith("summary")]
+
+        if summary_files:
+            selected_summary = st.selectbox("Select summary type", summary_files)
+            if selected_summary:
+                summary_path = os.path.join(material_folder_path, selected_summary)
+                summary = load_json_from_file(summary_path)
+                st.json(json.dumps(summary, indent=4))
+        else:
+            st.write("No summary files found for this material.")
     else:
         st.write("No material selected.")
