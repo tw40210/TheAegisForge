@@ -164,11 +164,11 @@ def test_append_mc_question_set(test_material_controller, sample_question_set):
         ),
     )
 
-    # Test appending question set
+    # Test appending question set without prefix
     result = test_material_controller.append_mc_question_set(0, sample_question_set)
     assert result == 0
 
-    # Verify the question set was saved
+    # Verify the question set was saved with numeric key
     updated_meta = test_material_controller.db_controller.get_data(
         test_material_controller.db_controller.get_target_path(
             [test_material_controller.db_table_name, "0"]
@@ -176,6 +176,25 @@ def test_append_mc_question_set(test_material_controller, sample_question_set):
     )
     assert "0" in updated_meta["mc_question_sets"]
     assert updated_meta["mc_question_sets"]["0"] == sample_question_set
+
+    # Test appending multiple question sets with the same prefix
+    prefix = "test_prefix"
+    for _ in range(3):
+        result = test_material_controller.append_mc_question_set(0, sample_question_set, prefix)
+        assert result == 0
+
+    # Verify the question sets were saved with incrementing IDs
+    updated_meta = test_material_controller.db_controller.get_data(
+        test_material_controller.db_controller.get_target_path(
+            [test_material_controller.db_table_name, "0"]
+        )
+    )
+    assert f"{prefix}_0" in updated_meta["mc_question_sets"]
+    assert f"{prefix}_1" in updated_meta["mc_question_sets"]
+    assert f"{prefix}_2" in updated_meta["mc_question_sets"]
+    assert updated_meta["mc_question_sets"][f"{prefix}_0"] == sample_question_set
+    assert updated_meta["mc_question_sets"][f"{prefix}_1"] == sample_question_set
+    assert updated_meta["mc_question_sets"][f"{prefix}_2"] == sample_question_set
 
 
 def test_append_summary(test_material_controller, sample_summary):

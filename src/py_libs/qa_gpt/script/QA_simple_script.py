@@ -5,61 +5,107 @@ from src.py_libs.qa_gpt.core.controller.db_controller import (
     MaterialController,
 )
 from src.py_libs.qa_gpt.core.controller.qa_controller import QAController
-from src.py_libs.qa_gpt.core.objects.summaries import StandardSummary, TechnicalSummary
+from src.py_libs.qa_gpt.core.objects.summaries import (
+    InnovationSummary,
+    StandardSummary,
+    TechnicalSummary,
+)
+
+summary_objects = [
+    StandardSummary,
+    TechnicalSummary,
+    InnovationSummary,
+]
 
 
 def fetch_material_add_sets():
+    """Fetch material and add question sets to each material."""
     db_name = "my_local_db"
     archive_name = "my_archive"
-    source_folder_path = Path("./pdf_data")
     local_db_controller = LocalDatabaseController(db_name=db_name)
     material_controller = MaterialController(
         db_controller=local_db_controller, archive_name=archive_name
     )
     qa_cotroller = QAController()
+    material_table = material_controller.get_material_table()
 
-    material_controller.fetch_material_folder(source_folder_path)
-
-    for file_id, file_meta in material_controller.get_material_table().items():
+    total_materials = len(material_table)
+    for material_idx, (file_id, file_meta) in enumerate(material_table.items(), 1):
+        print(f"\nProcessing material {material_idx}/{total_materials} (ID: {file_id})")
         print(
             f"Material {file_id} originally have {len(file_meta.mc_question_sets)} mc_questions sets."
         )
-        current_num_sets = len(file_meta.mc_question_sets)
-        while current_num_sets < 2:
 
-            mc_question_set = qa_cotroller.get_questions(file_meta["file_path"])
-            material_controller.append_mc_question_set(file_id, mc_question_set)
-            updated_num_sets = len(file_meta.mc_question_sets)
-            print(f"Material {file_id} have {updated_num_sets} questions now.")
+        for summary_idx, summary_object in enumerate(summary_objects, 1):
+            # Skip if summary type doesn't exist
+            summary_type = summary_object.__name__
+            if summary_type not in file_meta.summaries or file_meta.summaries[summary_type] is None:
+                print(f"Skipping {summary_type} as it doesn't exist.")
+                continue
 
-            assert updated_num_sets == current_num_sets + 1
-            current_num_sets = updated_num_sets
+            print(f"\nProcessing summary {summary_idx}/{len(summary_objects)}: {summary_type}")
+            # Get the summary object
+            summary = file_meta.summaries[summary_type]
+            summary_dict = summary.model_dump()
+
+            # Get questions for each top-level attribute
+            total_fields = len(summary_dict)
+            for field_idx, (field_name, field_value) in enumerate(summary_dict.items(), 1):
+                print(f"Processing field {field_idx}/{total_fields}: {field_name}")
+                # Create prefix for the question set
+                prefix = f"{summary_type}_{field_name}"
+
+                # Count existing question sets with this prefix
+                existing_count = sum(
+                    1 for key in file_meta.mc_question_sets.keys() if key.startswith(prefix)
+                )
+                if existing_count > 0:
+                    print(
+                        f"Skipping {prefix} as {existing_count} question set(s) already exist(s)."
+                    )
+                    continue
+
+                # Get questions for this specific field
+                question_set = qa_cotroller.get_questions(
+                    file_meta["file_path"], field_name, field_value
+                )
+                material_controller.append_mc_question_set(file_id, question_set, prefix)
+                print(f"Added question set for {prefix}")
+
+        print(f"\nCompleted processing material {material_idx}/{total_materials} (ID: {file_id})")
 
 
 def fetch_material_add_summary():
+    """Fetch material and add summary to each material."""
     db_name = "my_local_db"
     archive_name = "my_archive"
-    source_folder_path = Path("./pdf_data")
     local_db_controller = LocalDatabaseController(db_name=db_name)
     material_controller = MaterialController(
         db_controller=local_db_controller, archive_name=archive_name
     )
     qa_cotroller = QAController()
+    material_table = material_controller.get_material_table()
 
-    material_controller.fetch_material_folder(source_folder_path)
+    total_materials = len(material_table)
+    for material_idx, (file_id, file_meta) in enumerate(material_table.items(), 1):
+        print(f"\nProcessing material {material_idx}/{total_materials} (ID: {file_id})")
 
-    for file_id, file_meta in material_controller.get_material_table().items():
-        current_num_summaries = len(file_meta.summaries)
-        adding_summary_objects = [StandardSummary, TechnicalSummary]
-        while len(file_meta.summaries) < len(adding_summary_objects):
-            print(f"Adding summary to material {file_id}.")
-            for summary_object in adding_summary_objects:
-                summary = qa_cotroller.get_summary(file_meta["file_path"], summary_object)
-                material_controller.append_summary(file_id, summary)
-            updated_num_summaries = len(file_meta.summaries)
+        for summary_idx, summary_object in enumerate(summary_objects, 1):
+            # Skip if summary type already exists
+            summary_type = summary_object.__name__
+            if (
+                summary_type in file_meta.summaries
+                and file_meta.summaries[summary_type] is not None
+            ):
+                print(f"Skipping {summary_type} as it already exists.")
+                continue
 
-            assert updated_num_summaries > current_num_summaries
-            current_num_summaries = updated_num_summaries
+            print(f"Processing summary {summary_idx}/{len(summary_objects)}: {summary_type}")
+            summary = qa_cotroller.get_summary(file_meta["file_path"], summary_object)
+            material_controller.append_summary(file_id, summary)
+            print(f"Added summary for {summary_type}")
+
+        print(f"\nCompleted processing material {material_idx}/{total_materials} (ID: {file_id})")
 
 
 def output_question_data():

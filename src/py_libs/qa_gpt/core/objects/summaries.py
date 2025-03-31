@@ -77,6 +77,50 @@ class BulletPoint(BaseModel):
         }
 
 
+class InnovationPoint(BaseModel):
+    subject: str
+    description: str
+    technical_details: str
+    why_is_innovative: str
+    similar_concepts: list[str]
+    importance: int
+
+    def __str__(self):
+        split_line = "*" * 20 + "\n"
+        return f"""
+        {split_line}
+        subject:{self.subject}
+        description:{self.description}
+        technical_details:{self.technical_details}
+        why_is_innovative:{self.why_is_innovative}
+        similar_concepts:{self.similar_concepts}
+        importance:{self.importance}
+        {split_line}
+        """
+
+    @classmethod
+    def model_json_schema(cls):
+        return {
+            "type": "object",
+            "properties": {
+                "subject": {"type": "string"},
+                "description": {"type": "string"},
+                "technical_details": {"type": "string"},
+                "why_is_innovative": {"type": "string"},
+                "similar_concepts": {"type": "array", "items": {"type": "string"}},
+                "importance": {"type": "integer"},
+            },
+            "required": [
+                "subject",
+                "description",
+                "technical_details",
+                "why_is_innovative",
+                "similar_concepts",
+                "importance",
+            ],
+        }
+
+
 class BaseSummary(BaseModel):
     """Base summary class with motivation and bullet points"""
 
@@ -97,6 +141,58 @@ class BaseSummary(BaseModel):
         schema = super().model_json_schema()
         schema["required"] = list(schema["properties"].keys())
         return schema
+
+    @classmethod
+    def prompt(cls):
+        return """
+I want you to act as a professional summarizer tasked with breaking down the provided input material into concise, clearly separated bullet points. Each bullet point must capture a single, distinct concept, idea, or piece of information from the material. Follow these detailed instructions to ensure clarity and thoroughness:
+
+Role and Objective
+Role: Act as an expert summarizer with a focus on clarity and organization.
+Objective: Produce a list of bullet points where each point represents a standalone concept from the input material. Avoid combining multiple ideas into one point.
+Steps to Follow
+Analyze the Material:
+
+Carefully read through the entire material to understand its structure, main topics, subtopics, and detailed content.
+Identify distinct ideas, arguments, or pieces of information that are critical to understanding the material.
+Break Down the Content:
+
+Divide the material into sections, paragraphs, or logical groupings.
+Extract key concepts or pieces of information from each section.
+Focus on isolating each idea into a standalone statement for clarity.
+Create Bullet Points:
+
+Write bullet points that are concise yet complete, clearly conveying a single concept.
+Avoid combining multiple ideas into one bullet point. If necessary, break down complex ideas into smaller, separate points.
+Use precise and straightforward language to ensure clarity.
+Ensure Separation of Concepts:
+
+Review each bullet point to confirm it reflects a unique idea and does not overlap with other points.
+Ensure that each concept is independently understandable without requiring context from other bullet points.
+Prioritize Relevance:
+
+Focus on the most important ideas or findings in the material.
+Exclude minor details or redundant information unless they are critical for understanding the main concepts.
+Structure the Summary:
+
+Present the bullet points in a logical order, following the structure of the input material (e.g., section by section).
+If the material has a hierarchical structure, group related bullet points under subheadings for better organization.
+Example Output Format
+If the material is about "The Impact of Renewable Energy on Global Energy Markets," the summary might look like this:
+
+Additional Considerations:
+Maintain neutrality and avoid inserting opinions or interpretations.
+If technical terms or jargon are used in the material, retain them in the bullet points but keep the explanations straightforward.
+For lengthy or complex materials, aim for a high-level summary first, followed by more detailed points if required.
+
+Fromat:
+    subject: Few words to illustrate this point
+    description: High level description of this point which shows the background, motivation, methodology and conclusion of this point demonstrated in this material
+    importance_explanation: Why do we think this is an important point of this material? What's the role of this point playing in the structure of this material?
+    technical_details: Provide data, approaches, formula or reference used in this material related to this point. The technical_details should be as detail as possible. Any number, term, forluma is appreciated.
+    importance: How important is this point among all points? You can choose from 1,2,3,4,5. A large number means it's important. A small number means it's trivial.
+
+            """
 
 
 class StandardSummary(BaseSummary):
@@ -123,6 +219,50 @@ class StandardSummary(BaseSummary):
             "conclusion": self.conclusion.model_dump(),
             "bullet_points": [bp.model_dump() for bp in self.bullet_points],
         }
+
+    @classmethod
+    def prompt(cls):
+        return """
+I want you to act as a professional summarizer tasked with creating a comprehensive standard summary of the provided input material. This summary should include motivation, conclusion, and detailed bullet points. Follow these detailed instructions to ensure clarity and thoroughness:
+
+Role and Objective
+Role: Act as an expert summarizer with a focus on comprehensive analysis and structured presentation.
+Objective: Produce a complete summary that includes motivation, conclusion, and well-organized bullet points that capture the key aspects of the material.
+
+Structure Requirements:
+
+1. Motivation Section:
+   - Provide a clear description of the topic or problem
+   - Explain the specific problem being addressed
+   - Detail the proposed solution approach
+   - Justify why the problem can be solved
+
+2. Conclusion Section:
+   - Summarize the main findings or outcomes
+   - Restate the core problem addressed
+   - Quantify or qualify how much of the problem was solved
+   - Highlight the key contributions made
+
+3. Bullet Points:
+   - Break down the material into distinct, standalone concepts
+   - Each point should be self-contained and clear
+   - Include both high-level concepts and technical details
+   - Prioritize points based on importance
+
+Format for Each Bullet Point:
+    subject: Brief, descriptive title for the point
+    description: Comprehensive explanation including background, methodology, and findings
+    importance_explanation: Justification of the point's significance in the overall context
+    technical_details: Specific data, methods, formulas, or references used
+    importance: Rating from 1-5 indicating relative significance (5 being most important)
+
+Additional Guidelines:
+- Maintain objectivity and avoid personal interpretations
+- Use clear, precise language while preserving technical accuracy
+- Ensure logical flow between sections
+- Include relevant technical details while keeping explanations accessible
+- Structure the content to build understanding progressively
+"""
 
 
 class TechnicalSummary(BaseModel):
@@ -204,3 +344,161 @@ class TechnicalSummary(BaseModel):
                 "limitations",
             ],
         }
+
+    @classmethod
+    def prompt(cls):
+        return """
+I want you to act as a technical documentation specialist tasked with creating a detailed technical summary. This summary should focus on the technical aspects, implementation details, and practical considerations of the subject matter. Follow these detailed instructions to ensure comprehensive technical coverage:
+
+Role and Objective
+Role: Act as a technical documentation expert with deep understanding of technical concepts and implementation details.
+Objective: Produce a structured technical summary that covers all aspects of the technical documentation, from high-level concepts to specific implementation details.
+
+Structure Requirements:
+
+1. Overview:
+   - Provide a concise technical overview of the system or concept
+   - Focus on technical architecture and core functionality
+   - Highlight the main technical objectives
+
+2. Key Concepts:
+   - List and explain fundamental technical concepts
+   - Include relevant technical terminology
+   - Explain relationships between different technical components
+
+3. Technical Details:
+   - Provide specific technical specifications
+   - Include relevant formulas, algorithms, or methodologies
+   - Detail technical parameters and configurations
+
+4. Implementation Steps:
+   - Break down the implementation process into clear, sequential steps
+   - Include specific technical procedures
+   - Provide guidance on technical setup and configuration
+
+5. Requirements:
+   - List all technical prerequisites
+   - Specify system requirements
+   - Detail dependencies and compatibility requirements
+
+6. Limitations:
+   - Document technical constraints
+   - List known technical issues or limitations
+   - Specify performance boundaries
+
+Additional Guidelines:
+- Use precise technical terminology
+- Include specific version numbers, parameters, and configurations
+- Provide clear technical specifications
+- Include relevant code snippets or technical examples
+- Maintain technical accuracy while ensuring clarity
+- Consider both theoretical and practical technical aspects
+"""
+
+
+class InnovationSummary(BaseModel):
+    """Summary specifically for innovation documentation"""
+
+    overview: str
+    key_concepts: list[str]
+    innovation_points: list[InnovationPoint]
+    references: list[str]
+
+    def __str__(self):
+        split_line = "=" * 20 + "\n"
+        return f"""
+        {split_line}
+        overview:{self.overview}
+        key_concepts:{self.key_concepts}
+        innovation_points:{self.innovation_points}
+        references:{self.references}
+        {split_line}
+        """
+
+    def model_dump(self):
+        return {
+            "overview": self.overview,
+            "key_concepts": self.key_concepts,
+            "innovation_points": [ip.model_dump() for ip in self.innovation_points],
+            "references": self.references,
+        }
+
+    @classmethod
+    def model_json_schema(cls):
+        return {
+            "type": "object",
+            "title": "InnovationSummary",
+            "description": "Summary specifically for innovation documentation",
+            "properties": {
+                "overview": {
+                    "type": "string",
+                    "description": "A high-level overview of the innovation",
+                },
+                "key_concepts": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of key innovative concepts",
+                },
+                "innovation_points": {
+                    "type": "array",
+                    "items": InnovationPoint.model_json_schema(),
+                    "description": "List of detailed innovation points",
+                },
+                "references": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of references and related work",
+                },
+            },
+            "required": [
+                "overview",
+                "key_concepts",
+                "innovation_points",
+                "references",
+            ],
+        }
+
+    @classmethod
+    def prompt(cls):
+        return """
+I want you to act as an innovation documentation specialist tasked with creating a detailed innovation summary. This summary should focus on identifying, analyzing, and explaining innovative aspects of the subject matter. Follow these detailed instructions to ensure comprehensive coverage of innovation:
+
+Role and Objective
+Role: Act as an innovation documentation expert with deep understanding of technological advancement and creative solutions.
+Objective: Produce a structured innovation summary that highlights novel concepts, their significance, and their relationship to existing work.
+
+Structure Requirements:
+
+1. Overview:
+   - Provide a concise overview of the innovative aspects
+   - Highlight the main areas of innovation
+   - Explain the broader impact and potential applications
+
+2. Key Concepts:
+   - List and explain fundamental innovative concepts
+   - Identify breakthrough ideas and novel approaches
+   - Highlight unique methodologies or techniques
+
+3. Innovation Points:
+   For each innovation point, provide:
+   - subject: Brief, descriptive title of the innovation
+   - description: Detailed explanation of the innovative concept
+   - technical_details: Specific technical implementation or methodology
+   - why_is_innovative: Clear explanation of what makes this concept novel
+   - similar_concepts: List of related or similar existing concepts
+   - importance: Rating from 1-5 indicating relative significance (5 being most important)
+
+4. References:
+   - List relevant academic papers and technical documentation
+   - Include related work and prior art
+   - Reference industry standards or frameworks
+
+Additional Guidelines:
+- Focus on truly innovative aspects rather than incremental improvements
+- Clearly explain what makes each concept novel
+- Provide concrete technical details to support innovation claims
+- Compare and contrast with existing solutions
+- Consider both theoretical and practical implications
+- Maintain objectivity while highlighting unique contributions
+- Include specific metrics or evidence of innovation where available
+"""

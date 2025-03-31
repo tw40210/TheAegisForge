@@ -187,12 +187,21 @@ class MaterialController:
         file_meta = self.db_controller.get_data(target_path)
         return file_meta, target_path
 
-    def append_mc_question_set(self, file_id: int, question_set: MultipleChoiceQuestionSet) -> int:
+    def append_mc_question_set(
+        self, file_id: int, question_set: MultipleChoiceQuestionSet, prefix: str = ""
+    ) -> int:
         file_meta, target_path = self._get_material_filemeta(file_id)
         mc_question_sets = file_meta["mc_question_sets"]
-        question_set_id = len(mc_question_sets)
 
-        file_meta["mc_question_sets"][str(question_set_id)] = question_set
+        # Count existing question sets with the same prefix
+        existing_prefix_count = sum(1 for key in mc_question_sets.keys() if key.startswith(prefix))
+
+        # Create a unique ID by combining prefix with count
+        question_set_id = (
+            f"{prefix}_{existing_prefix_count}" if prefix else str(len(mc_question_sets))
+        )
+
+        file_meta["mc_question_sets"][question_set_id] = question_set
         self.db_controller.save_data(file_meta, target_path)
 
         return 0

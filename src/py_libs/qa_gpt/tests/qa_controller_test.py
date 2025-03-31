@@ -162,14 +162,31 @@ def test_get_questions(qa_controller, test_file_path, mock_questions, mocker):
     )
     mock_get_response.return_value = mock_questions
 
-    # Test
+    # Test without summary
     result = qa_controller.get_questions(test_file_path)
 
     # Assertions
-    assert isinstance(result, MultipleChoiceQuestionSet)
-    assert result == mock_questions
+    assert isinstance(result, dict)
+    assert "general" in result
+    assert isinstance(result["general"], MultipleChoiceQuestionSet)
+    assert result["general"] == mock_questions
     mock_get_response.assert_called_once()
     qa_controller.preprocess_controller._pdf_to_text.assert_called_once_with(test_file_path)
+
+    # Test with summary model_dump
+    summary_dump = {
+        "motivation": "Test motivation",
+        "conclusion": "Test conclusion",
+        "bullet_points": "Test bullet points",
+    }
+    result = qa_controller.get_questions(test_file_path, summary_dump)
+
+    # Assertions for summary case
+    assert isinstance(result, dict)
+    assert "motivation" in result
+    assert "conclusion" in result
+    assert "bullet_points" in result
+    assert all(isinstance(qs, MultipleChoiceQuestionSet) for qs in result.values())
 
 
 def test_preprocess_controller_initialization(qa_controller):

@@ -28,14 +28,18 @@ class BaseQAController(ABC):
         pass
 
     @abstractmethod
-    def get_questions(self, file_path: Path) -> MultipleChoiceQuestionSet:
-        """Generate questions based on the content from a file.
+    def get_questions(
+        self, file_path: Path, field_name: str, field_value: any
+    ) -> MultipleChoiceQuestionSet:
+        """Generate questions based on the content from a file and a specific field.
 
         Args:
             file_path (Path): Path to the file to generate questions from
+            field_name (str): Name of the field to generate questions for
+            field_value (any): Value of the field to generate questions for
 
         Returns:
-            MultipleChoiceQuestionSet: A set of multiple choice questions
+            MultipleChoiceQuestionSet: A set of questions for the specified field
         """
         pass
 
@@ -47,53 +51,7 @@ class QAController(BaseQAController):
         self.summary_message_temp = {
             "role": "system",
             "content": """
-I want you to act as a professional summarizer tasked with breaking down the provided input material into concise, clearly separated bullet points. Each bullet point must capture a single, distinct concept, idea, or piece of information from the material. Follow these detailed instructions to ensure clarity and thoroughness:
-
-Role and Objective
-Role: Act as an expert summarizer with a focus on clarity and organization.
-Objective: Produce a list of bullet points where each point represents a standalone concept from the input material. Avoid combining multiple ideas into one point.
-Steps to Follow
-Analyze the Material:
-
-Carefully read through the entire material to understand its structure, main topics, subtopics, and detailed content.
-Identify distinct ideas, arguments, or pieces of information that are critical to understanding the material.
-Break Down the Content:
-
-Divide the material into sections, paragraphs, or logical groupings.
-Extract key concepts or pieces of information from each section.
-Focus on isolating each idea into a standalone statement for clarity.
-Create Bullet Points:
-
-Write bullet points that are concise yet complete, clearly conveying a single concept.
-Avoid combining multiple ideas into one bullet point. If necessary, break down complex ideas into smaller, separate points.
-Use precise and straightforward language to ensure clarity.
-Ensure Separation of Concepts:
-
-Review each bullet point to confirm it reflects a unique idea and does not overlap with other points.
-Ensure that each concept is independently understandable without requiring context from other bullet points.
-Prioritize Relevance:
-
-Focus on the most important ideas or findings in the material.
-Exclude minor details or redundant information unless they are critical for understanding the main concepts.
-Structure the Summary:
-
-Present the bullet points in a logical order, following the structure of the input material (e.g., section by section).
-If the material has a hierarchical structure, group related bullet points under subheadings for better organization.
-Example Output Format
-If the material is about "The Impact of Renewable Energy on Global Energy Markets," the summary might look like this:
-
-Additional Considerations:
-Maintain neutrality and avoid inserting opinions or interpretations.
-If technical terms or jargon are used in the material, retain them in the bullet points but keep the explanations straightforward.
-For lengthy or complex materials, aim for a high-level summary first, followed by more detailed points if required.
-
-Fromat:
-    subject: Few words to illustrate this point
-    description: High level description of this point which shows the background, motivation, methodology and conclusion of this point demonstrated in this material
-    importance_explanation: Why do we think this is an important point of this material? What's the role of this point playing in the structure of this material?
-    technical_details: Provide data, approaches, formula or reference used in this material related to this point. The technical_details should be as detail as possible. Any number, term, forluma is appreciated.
-    importance: How important is this point among all points? You can choose from 1,2,3,4,5. A large number means it's important. A small number means it's trivial.
-
+Summary prompt placeholder
             """,
         }
         self.question_message_temp = {
@@ -163,17 +121,36 @@ Choice:
         material_text = self.preprocess_controller.preprocess(file_path)
         user_input = self.user_input_temp.copy()
         user_input.update({"content": material_text})
-        messages = [self.summary_message_temp.copy(), user_input]
+        sys_summary_message = self.summary_message_temp.copy()
+        sys_summary_message.update({"content": summary_class.prompt()})
+
+        messages = [sys_summary_message, user_input]
         result = get_chat_gpt_response_structure(messages, res_obj=summary_class)
         return result
 
-    def get_questions(self, file_path: Path) -> MultipleChoiceQuestionSet:
+    def get_questions(
+        self, file_path: Path, field_name: str, field_value: any
+    ) -> MultipleChoiceQuestionSet:
+        """Generate questions based on the content from a file and a specific field.
+
+        Args:
+            file_path (Path): Path to the file to generate questions from
+            field_name (str): Name of the field to generate questions for
+            field_value (any): Value of the field to generate questions for
+
+        Returns:
+            MultipleChoiceQuestionSet: A set of questions for the specified field
+        """
         material_text = self.preprocess_controller.preprocess(file_path)
         user_input = self.user_input_temp.copy()
-        user_input.update({"content": material_text})
+
+        # Create context with the field name and value
+        context = (
+            f"Material: {material_text}\n\n{field_name.replace('_', ' ').title()}:\n{field_value}"
+        )
+        user_input.update({"content": context})
         messages = [self.question_message_temp.copy(), user_input]
-        result = get_chat_gpt_response_structure(messages, res_obj=MultipleChoiceQuestionSet)
-        return result
+        return get_chat_gpt_response_structure(messages, res_obj=MultipleChoiceQuestionSet)
 
 
 class PreprocessController:
