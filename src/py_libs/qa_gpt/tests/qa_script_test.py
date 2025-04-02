@@ -16,7 +16,7 @@ from src.py_libs.qa_gpt.core.objects.summaries import (
     StandardSummary,
     TechnicalSummary,
 )
-from src.py_libs.qa_gpt.script.QA_simple_script import (
+from src.py_libs.qa_gpt.core.utils.fetch_utils import (
     fetch_material_add_sets,
     fetch_material_add_summary,
     output_question_data,
@@ -35,7 +35,7 @@ def test_pdf_folder(tmp_path):
 @pytest.fixture
 def mock_qa_controller():
     controller = MagicMock()
-    with patch("src.py_libs.qa_gpt.script.QA_simple_script.QAController") as mock:
+    with patch("src.py_libs.qa_gpt.core.utils.fetch_utils.QAController") as mock:
         mock.return_value = controller
         yield controller
 
@@ -43,7 +43,7 @@ def mock_qa_controller():
 @pytest.fixture
 def mock_material_controller():
     controller = MagicMock()
-    with patch("src.py_libs.qa_gpt.script.QA_simple_script.MaterialController") as mock:
+    with patch("src.py_libs.qa_gpt.core.utils.fetch_utils.MaterialController") as mock:
         mock.return_value = controller
         yield controller
 
@@ -51,7 +51,7 @@ def mock_material_controller():
 @pytest.fixture
 def mock_db_controller():
     controller = MagicMock()
-    with patch("src.py_libs.qa_gpt.script.QA_simple_script.LocalDatabaseController") as mock:
+    with patch("src.py_libs.qa_gpt.core.utils.fetch_utils.LocalDatabaseController") as mock:
         mock.return_value = controller
         yield controller
 
@@ -99,7 +99,7 @@ def test_fetch_material_add_summary_flow(
     ]
 
     # Run the function
-    with patch("src.py_libs.qa_gpt.script.QA_simple_script.Path") as mock_path:
+    with patch("src.py_libs.qa_gpt.core.utils.fetch_utils.Path") as mock_path:
         mock_path.return_value = test_pdf_folder
         fetch_material_add_summary()
 
@@ -119,9 +119,30 @@ def test_fetch_material_add_sets_flow(
         "StandardSummary_conclusion_0": MagicMock(),  # Already exists
         "StandardSummary_bullet_points_0": MagicMock(),  # Already exists
     }
+
+    # Create mock summaries with model_dump
+    standard_summary = MagicMock()
+    standard_summary.model_dump.return_value = {
+        "summary_type": "standard",
+        "motivation": "test motivation",
+        "conclusion": "test conclusion",
+        "bullet_points": "test bullet points",
+    }
+
+    technical_summary = MagicMock()
+    technical_summary.model_dump.return_value = {
+        "summary_type": "technical",
+        "overview": "test overview",
+        "key_concepts": ["test concept"],
+        "technical_details": ["test detail"],
+        "implementation_steps": ["test step"],
+        "requirements": ["test requirement"],
+        "limitations": ["test limitation"],
+    }
+
     file_meta.summaries = {
-        "StandardSummary": MagicMock(),
-        "TechnicalSummary": MagicMock(),
+        "StandardSummary": standard_summary,
+        "TechnicalSummary": technical_summary,
     }
     file_meta.__getitem__.return_value = str(test_pdf_folder / "test.pdf")
 
@@ -150,21 +171,17 @@ def test_fetch_material_add_sets_flow(
 
     # Setup mock to return question sets for each summary's top-level attributes
     mock_qa_controller.get_questions.side_effect = [
-        # First call with StandardSummary model_dump (should be skipped)
-        {
-            "motivation": question_set,
-            "conclusion": question_set,
-            "bullet_points": question_set,
-        },
-        # Second call with TechnicalSummary model_dump (should be added)
-        {
-            "overview": question_set,
-            "key_concepts": question_set,
-            "technical_details": question_set,
-            "implementation_steps": question_set,
-            "requirements": question_set,
-            "limitations": question_set,
-        },
+        question_set,  # For each field in StandardSummary
+        question_set,
+        question_set,
+        question_set,
+        question_set,  # For each field in TechnicalSummary
+        question_set,
+        question_set,
+        question_set,
+        question_set,
+        question_set,
+        question_set,
     ]
 
     # Run the function
@@ -172,10 +189,13 @@ def test_fetch_material_add_sets_flow(
 
     # Verify the flow
     mock_material_controller.fetch_material_folder.assert_called_once_with(Path("./pdf_data"))
-    assert mock_qa_controller.get_questions.call_count == 2  # Called for both summaries
     assert (
-        mock_material_controller.append_mc_question_set.call_count == 6
-    )  # Only for TechnicalSummary fields
+        mock_qa_controller.get_questions.call_count == 8
+    )  # Called for all fields in both summaries, minus skipped ones
+    assert (
+        mock_material_controller.append_mc_question_set.call_count == 8
+    )  # Called for each new question set
+    assert len(file_meta.mc_question_sets) == 11  # 3 existing + 8 new
 
     # Verify question sets were saved with correct prefixes
     saved_prefixes = list(file_meta.mc_question_sets.keys())
@@ -183,13 +203,16 @@ def test_fetch_material_add_sets_flow(
     assert "StandardSummary_motivation_0" in saved_prefixes
     assert "StandardSummary_conclusion_0" in saved_prefixes
     assert "StandardSummary_bullet_points_0" in saved_prefixes
-    # New TechnicalSummary sets should be added
-    assert "TechnicalSummary_overview_0" in saved_prefixes
-    assert "TechnicalSummary_key_concepts_0" in saved_prefixes
-    assert "TechnicalSummary_technical_details_0" in saved_prefixes
-    assert "TechnicalSummary_implementation_steps_0" in saved_prefixes
-    assert "TechnicalSummary_requirements_0" in saved_prefixes
-    assert "TechnicalSummary_limitations_0" in saved_prefixes
+    # New StandardSummary sets should be added
+    assert "StandardSummary_summary_type" in saved_prefixes
+    # TechnicalSummary sets should be added
+    assert "TechnicalSummary_summary_type" in saved_prefixes
+    assert "TechnicalSummary_overview" in saved_prefixes
+    assert "TechnicalSummary_key_concepts" in saved_prefixes
+    assert "TechnicalSummary_technical_details" in saved_prefixes
+    assert "TechnicalSummary_implementation_steps" in saved_prefixes
+    assert "TechnicalSummary_requirements" in saved_prefixes
+    assert "TechnicalSummary_limitations" in saved_prefixes
 
 
 def test_output_question_data_flow(
@@ -211,11 +234,11 @@ def test_full_script_flow(
     # Setup mock returns
     file_meta = MagicMock()
     file_meta.summaries = {}
-    file_meta.mc_question_sets = []
+    file_meta.mc_question_sets = {}
     file_meta.__getitem__.return_value = str(test_pdf_folder / "test.pdf")
 
     def append_mc_question_set_side_effect(file_id, question_set, prefix=""):
-        file_meta.mc_question_sets.append((prefix, question_set))
+        file_meta.mc_question_sets[prefix] = question_set
 
     def append_summary_side_effect(file_id, summary):
         summary_type = summary.__class__.__name__
@@ -290,34 +313,26 @@ def test_full_script_flow(
         innovation_summary,
     ]
 
-    # Setup mock to return question sets for each summary type
+    # Setup mock to return question sets for each field
     mock_qa_controller.get_questions.side_effect = [
-        # StandardSummary fields
-        {
-            "motivation": question_set,
-            "conclusion": question_set,
-            "bullet_points": question_set,
-        },
-        # TechnicalSummary fields
-        {
-            "overview": question_set,
-            "key_concepts": question_set,
-            "technical_details": question_set,
-            "implementation_steps": question_set,
-            "requirements": question_set,
-            "limitations": question_set,
-        },
-        # InnovationSummary fields
-        {
-            "overview": question_set,
-            "key_concepts": question_set,
-            "innovation_points": question_set,
-            "references": question_set,
-        },
+        question_set,  # For each field in StandardSummary (4 fields)
+        question_set,
+        question_set,
+        question_set,
+        question_set,  # For each field in TechnicalSummary (6 fields)
+        question_set,
+        question_set,
+        question_set,
+        question_set,
+        question_set,
+        question_set,  # For each field in InnovationSummary (4 fields)
+        question_set,
+        question_set,
+        question_set,
     ]
 
     # Run all functions in sequence
-    with patch("src.py_libs.qa_gpt.script.QA_simple_script.Path") as mock_path:
+    with patch("src.py_libs.qa_gpt.core.utils.fetch_utils.Path") as mock_path:
         mock_path.return_value = test_pdf_folder
         fetch_material_add_summary()
         fetch_material_add_sets()
@@ -330,9 +345,7 @@ def test_full_script_flow(
     assert len(file_meta.summaries) == 3  # Should have all 3 summaries
     assert mock_qa_controller.get_summary.call_count == 3  # Should be called for each summary type
     assert (
-        len(file_meta.mc_question_sets) == 13
-    )  # 3 for StandardSummary + 6 for TechnicalSummary + 4 for InnovationSummary
-    assert (
-        mock_qa_controller.get_questions.call_count == 3
-    )  # Should be called for each summary type
+        len(file_meta.mc_question_sets) == 14
+    )  # 4 for StandardSummary + 6 for TechnicalSummary + 4 for InnovationSummary
+    assert mock_qa_controller.get_questions.call_count == 14  # Should be called for each field
     mock_material_controller.output_material_as_folder.assert_called_once()
