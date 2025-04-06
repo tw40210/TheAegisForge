@@ -61,6 +61,9 @@
 - Init files (*/__init__.py)
 - Script files (*/script/*)
 
+### Test commands
+- Use "python -m pytest" to call pytest module
+
 ## Security Rules
 
 ### Private Keys
