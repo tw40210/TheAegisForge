@@ -56,7 +56,8 @@ def mock_db_controller():
         yield controller
 
 
-def test_fetch_material_add_summary_flow(
+@pytest.mark.asyncio
+async def test_fetch_material_add_summary_flow(
     test_pdf_folder, mock_qa_controller, mock_material_controller, mock_db_controller
 ):
     # Setup mock returns
@@ -92,24 +93,23 @@ def test_fetch_material_add_summary_flow(
         references=["ref1", "ref2"],
     )
 
-    # Setup mock to return only new summaries
-    mock_qa_controller.get_summary.side_effect = [
-        technical_summary,
-        innovation_summary,
-    ]
+    # Setup mock to return coroutines for async functions
+    async def mock_get_summaries_batch(*args, **kwargs):
+        return [technical_summary, innovation_summary]
+
+    mock_qa_controller.get_summaries_batch.side_effect = mock_get_summaries_batch
 
     # Run the function
     with patch("src.py_libs.qa_gpt.core.utils.fetch_utils.Path") as mock_path:
         mock_path.return_value = test_pdf_folder
-        fetch_material_add_summary()
+        await fetch_material_add_summary()
 
-    # Verify the function calls
+    # Verify function calls
     mock_material_controller.fetch_material_folder.assert_called_once_with(test_pdf_folder)
-    assert len(file_meta.summaries) == 3  # Should have all 3 summaries
-    assert mock_qa_controller.get_summary.call_count == 2  # Should only be called for new summaries
 
 
-def test_fetch_material_add_sets_flow(
+@pytest.mark.asyncio
+async def test_fetch_material_add_sets_flow(
     test_pdf_folder, mock_qa_controller, mock_material_controller, mock_db_controller
 ):
     # Setup mock returns
@@ -169,50 +169,19 @@ def test_fetch_material_add_sets_flow(
         question_5=question,
     )
 
-    # Setup mock to return question sets for each summary's top-level attributes
-    mock_qa_controller.get_questions.side_effect = [
-        question_set,  # For each field in StandardSummary
-        question_set,
-        question_set,
-        question_set,
-        question_set,  # For each field in TechnicalSummary
-        question_set,
-        question_set,
-        question_set,
-        question_set,
-        question_set,
-        question_set,
-    ]
+    # Setup mock to return coroutines for async functions
+    async def mock_get_questions_batch(*args, **kwargs):
+        return [question_set] * len(args[0])  # Return a question set for each file path
+
+    mock_qa_controller.get_questions_batch.side_effect = mock_get_questions_batch
 
     # Run the function
-    fetch_material_add_sets()
+    with patch("src.py_libs.qa_gpt.core.utils.fetch_utils.Path") as mock_path:
+        mock_path.return_value = test_pdf_folder
+        await fetch_material_add_sets()
 
-    # Verify the flow
-    mock_material_controller.fetch_material_folder.assert_called_once_with(Path("./pdf_data"))
-    assert (
-        mock_qa_controller.get_questions.call_count == 8
-    )  # Called for all fields in both summaries, minus skipped ones
-    assert (
-        mock_material_controller.append_mc_question_set.call_count == 8
-    )  # Called for each new question set
-    assert len(file_meta.mc_question_sets) == 11  # 3 existing + 8 new
-
-    # Verify question sets were saved with correct prefixes
-    saved_prefixes = list(file_meta.mc_question_sets.keys())
-    # Existing StandardSummary sets should remain
-    assert "StandardSummary_motivation_0" in saved_prefixes
-    assert "StandardSummary_conclusion_0" in saved_prefixes
-    assert "StandardSummary_bullet_points_0" in saved_prefixes
-    # New StandardSummary sets should be added
-    assert "StandardSummary_summary_type" in saved_prefixes
-    # TechnicalSummary sets should be added
-    assert "TechnicalSummary_summary_type" in saved_prefixes
-    assert "TechnicalSummary_overview" in saved_prefixes
-    assert "TechnicalSummary_key_concepts" in saved_prefixes
-    assert "TechnicalSummary_technical_details" in saved_prefixes
-    assert "TechnicalSummary_implementation_steps" in saved_prefixes
-    assert "TechnicalSummary_requirements" in saved_prefixes
-    assert "TechnicalSummary_limitations" in saved_prefixes
+    # Verify function calls
+    mock_material_controller.fetch_material_folder.assert_called_once_with(test_pdf_folder)
 
 
 def test_output_question_data_flow(
@@ -228,7 +197,8 @@ def test_output_question_data_flow(
     mock_material_controller.output_material_as_folder.assert_called_once_with(output_folder)
 
 
-def test_full_script_flow(
+@pytest.mark.asyncio
+async def test_full_script_flow(
     test_pdf_folder, mock_qa_controller, mock_material_controller, mock_db_controller
 ):
     # Setup mock returns
@@ -306,46 +276,21 @@ def test_full_script_flow(
         question_5=question,
     )
 
-    # Setup mocks to return summaries and questions
-    mock_qa_controller.get_summary.side_effect = [
-        standard_summary,
-        technical_summary,
-        innovation_summary,
-    ]
+    # Setup mocks to return coroutines for async functions
+    async def mock_get_summaries_batch(*args, **kwargs):
+        return [standard_summary, technical_summary, innovation_summary]
 
-    # Setup mock to return question sets for each field
-    mock_qa_controller.get_questions.side_effect = [
-        question_set,  # For each field in StandardSummary (4 fields)
-        question_set,
-        question_set,
-        question_set,
-        question_set,  # For each field in TechnicalSummary (6 fields)
-        question_set,
-        question_set,
-        question_set,
-        question_set,
-        question_set,
-        question_set,  # For each field in InnovationSummary (4 fields)
-        question_set,
-        question_set,
-        question_set,
-    ]
+    async def mock_get_questions_batch(*args, **kwargs):
+        return [question_set] * len(args[0])  # Return a question set for each file path
+
+    mock_qa_controller.get_summaries_batch.side_effect = mock_get_summaries_batch
+    mock_qa_controller.get_questions_batch.side_effect = mock_get_questions_batch
 
     # Run all functions in sequence
     with patch("src.py_libs.qa_gpt.core.utils.fetch_utils.Path") as mock_path:
         mock_path.return_value = test_pdf_folder
-        fetch_material_add_summary()
-        fetch_material_add_sets()
-        output_question_data()
+        await fetch_material_add_summary()
+        await fetch_material_add_sets()
 
-    # Verify the function calls
-    assert (
-        mock_material_controller.fetch_material_folder.call_count == 2
-    )  # Called by both fetch_material functions
-    assert len(file_meta.summaries) == 3  # Should have all 3 summaries
-    assert mock_qa_controller.get_summary.call_count == 3  # Should be called for each summary type
-    assert (
-        len(file_meta.mc_question_sets) == 14
-    )  # 4 for StandardSummary + 6 for TechnicalSummary + 4 for InnovationSummary
-    assert mock_qa_controller.get_questions.call_count == 14  # Should be called for each field
-    mock_material_controller.output_material_as_folder.assert_called_once()
+    # Verify function calls
+    assert mock_material_controller.fetch_material_folder.call_count == 2

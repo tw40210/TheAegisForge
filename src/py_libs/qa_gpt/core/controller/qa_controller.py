@@ -1,13 +1,12 @@
+import asyncio
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TypeVar
+from typing import Any, TypeVar
 
 import PyPDF2
 from pydantic import BaseModel
 
-from src.py_libs.qa_gpt.chat.chat import (  # get_chat_gpt_response,
-    get_chat_gpt_response_structure,
-)
+from src.py_libs.qa_gpt.chat.chat import get_chat_gpt_response_structure_async
 from src.py_libs.qa_gpt.core.objects.questions import MultipleChoiceQuestionSet
 
 T = TypeVar("T", bound=BaseModel)
@@ -15,7 +14,7 @@ T = TypeVar("T", bound=BaseModel)
 
 class BaseQAController(ABC):
     @abstractmethod
-    def get_summary(self, file_path: Path, summary_class: type[T]) -> T:
+    async def get_summary(self, file_path: Path, summary_class: type[T]) -> T:
         """Get a summary of the content from a file.
 
         Args:
@@ -28,7 +27,7 @@ class BaseQAController(ABC):
         pass
 
     @abstractmethod
-    def get_questions(
+    async def get_questions(
         self, file_path: Path, field_name: str, field_value: any
     ) -> MultipleChoiceQuestionSet:
         """Generate questions based on the content from a file and a specific field.
@@ -41,6 +40,18 @@ class BaseQAController(ABC):
         Returns:
             MultipleChoiceQuestionSet: A set of questions for the specified field
         """
+        pass
+
+    @abstractmethod
+    async def get_summaries_batch(
+        self, file_paths: list[Path], summary_classes: list[type[T]]
+    ) -> list[T]:
+        pass
+
+    @abstractmethod
+    async def get_questions_batch(
+        self, file_paths: list[Path], field_names: list[str], field_values: list[Any]
+    ) -> list[MultipleChoiceQuestionSet]:
         pass
 
 
@@ -117,7 +128,7 @@ Choice:
             """,
         }
 
-    def get_summary(self, file_path: Path, summary_class: type[T]) -> T:
+    async def get_summary(self, file_path: Path, summary_class: type[T]) -> T:
         material_text = self.preprocess_controller.preprocess(file_path)
         user_input = self.user_input_temp.copy()
         user_input.update({"content": material_text})
@@ -125,10 +136,10 @@ Choice:
         sys_summary_message.update({"content": summary_class.prompt()})
 
         messages = [sys_summary_message, user_input]
-        result = get_chat_gpt_response_structure(messages, res_obj=summary_class)
+        result = await get_chat_gpt_response_structure_async(messages, res_obj=summary_class)
         return result
 
-    def get_questions(
+    async def get_questions(
         self, file_path: Path, field_name: str, field_value: any
     ) -> MultipleChoiceQuestionSet:
         """Generate questions based on the content from a file and a specific field.
@@ -150,7 +161,27 @@ Choice:
         )
         user_input.update({"content": context})
         messages = [self.question_message_temp.copy(), user_input]
-        return get_chat_gpt_response_structure(messages, res_obj=MultipleChoiceQuestionSet)
+        return await get_chat_gpt_response_structure_async(
+            messages, res_obj=MultipleChoiceQuestionSet
+        )
+
+    async def get_summaries_batch(
+        self, file_paths: list[Path], summary_classes: list[type[T]]
+    ) -> list[T]:
+        tasks = []
+        for file_path, summary_class in zip(file_paths, summary_classes):
+            tasks.append(self.get_summary(file_path, summary_class))
+            await asyncio.sleep(3)  # Add 3 seconds delay between calls
+        return await asyncio.gather(*tasks)
+
+    async def get_questions_batch(
+        self, file_paths: list[Path], field_names: list[str], field_values: list[Any]
+    ) -> list[MultipleChoiceQuestionSet]:
+        tasks = []
+        for file_path, field_name, field_value in zip(file_paths, field_names, field_values):
+            tasks.append(self.get_questions(file_path, field_name, field_value))
+            await asyncio.sleep(5)  # Add 5 seconds delay between calls
+        return await asyncio.gather(*tasks)
 
 
 class PreprocessController:

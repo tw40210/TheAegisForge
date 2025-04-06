@@ -18,7 +18,7 @@ summary_objects = [
 ]
 
 
-def fetch_material_add_sets():
+async def fetch_material_add_sets():
     """Fetch material and add question sets to each material."""
     db_name = "my_local_db"
     archive_name = "my_archive"
@@ -26,7 +26,7 @@ def fetch_material_add_sets():
     material_controller = MaterialController(
         db_controller=local_db_controller, archive_name=archive_name
     )
-    qa_cotroller = QAController()
+    qa_controller = QAController()
 
     # Fetch material folder first
     material_controller.fetch_material_folder(Path("./pdf_data"))
@@ -38,6 +38,12 @@ def fetch_material_add_sets():
         print(
             f"Material {file_id} originally have {len(file_meta.mc_question_sets)} mc_questions sets."
         )
+
+        # Prepare batch processing data
+        file_paths = []
+        field_names = []
+        field_values = []
+        prefixes = []
 
         for summary_idx, summary_object in enumerate(summary_objects, 1):
             # Skip if summary type doesn't exist
@@ -68,17 +74,24 @@ def fetch_material_add_sets():
                     )
                     continue
 
-                # Get questions for this specific field
-                question_set = qa_cotroller.get_questions(
-                    file_meta["file_path"], field_name, field_value
-                )
+                file_paths.append(file_meta["file_path"])
+                field_names.append(field_name)
+                field_values.append(field_value)
+                prefixes.append(prefix)
+
+        # Process all questions in batch
+        if file_paths:
+            question_sets = await qa_controller.get_questions_batch(
+                file_paths, field_names, field_values
+            )
+            for prefix, question_set in zip(prefixes, question_sets):
                 material_controller.append_mc_question_set(file_id, question_set, prefix)
                 print(f"Added question set for {prefix}")
 
         print(f"\nCompleted processing material {material_idx}/{total_materials} (ID: {file_id})")
 
 
-def fetch_material_add_summary():
+async def fetch_material_add_summary():
     """Fetch material and add summary to each material."""
     db_name = "my_local_db"
     archive_name = "my_archive"
@@ -86,7 +99,7 @@ def fetch_material_add_summary():
     material_controller = MaterialController(
         db_controller=local_db_controller, archive_name=archive_name
     )
-    qa_cotroller = QAController()
+    qa_controller = QAController()
 
     # Fetch material folder first
     material_controller.fetch_material_folder(Path("./pdf_data"))
@@ -95,6 +108,11 @@ def fetch_material_add_summary():
     total_materials = len(material_table)
     for material_idx, (file_id, file_meta) in enumerate(material_table.items(), 1):
         print(f"\nProcessing material {material_idx}/{total_materials} (ID: {file_id})")
+
+        # Prepare batch processing data
+        file_paths = []
+        summary_classes = []
+        summary_types = []
 
         for summary_idx, summary_object in enumerate(summary_objects, 1):
             # Skip if summary type already exists
@@ -107,9 +125,16 @@ def fetch_material_add_summary():
                 continue
 
             print(f"Processing summary {summary_idx}/{len(summary_objects)}: {summary_type}")
-            summary = qa_cotroller.get_summary(file_meta["file_path"], summary_object)
-            material_controller.append_summary(file_id, summary)
-            print(f"Added summary for {summary_type}")
+            file_paths.append(file_meta["file_path"])
+            summary_classes.append(summary_object)
+            summary_types.append(summary_type)
+
+        # Process all summaries in batch
+        if file_paths:
+            summaries = await qa_controller.get_summaries_batch(file_paths, summary_classes)
+            for summary_type, summary in zip(summary_types, summaries):
+                material_controller.append_summary(file_id, summary)
+                print(f"Added summary for {summary_type}")
 
         print(f"\nCompleted processing material {material_idx}/{total_materials} (ID: {file_id})")
 

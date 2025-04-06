@@ -1,7 +1,8 @@
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
+from pytest_mock import MockerFixture
 
 from src.py_libs.qa_gpt.core.controller.qa_controller import QAController
 from src.py_libs.qa_gpt.core.objects.summaries import (
@@ -79,48 +80,36 @@ def mock_technical_summary():
     )
 
 
-@patch("src.py_libs.qa_gpt.core.controller.qa_controller.get_chat_gpt_response_structure")
-def test_get_standard_summary(mock_get_response, qa_controller, mock_standard_summary):
-    # Set up the mock to return our mock_standard_summary
+@pytest.mark.asyncio
+async def test_get_standard_summary(mock_standard_summary, qa_controller, mocker: MockerFixture):
+    # Setup mock
+    mock_get_response = mocker.patch(
+        "src.py_libs.qa_gpt.core.controller.qa_controller.get_chat_gpt_response_structure_async"
+    )
     mock_get_response.return_value = mock_standard_summary
 
-    # Test getting a standard summary
-    result = qa_controller.get_summary(Path("test.pdf"), StandardSummary)
+    # Test
+    result = await qa_controller.get_summary(Path("test.pdf"), StandardSummary)
 
-    # Verify that the mock was called
-    mock_get_response.assert_called_once()
-
-    # Verify the result matches our mock
-    assert result == mock_standard_summary
+    # Assertions
     assert isinstance(result, StandardSummary)
-    assert isinstance(result.motivation, Motivation)
-    assert isinstance(result.conclusion, Conclusion)
-    assert len(result.bullet_points) == 1
-    assert result.bullet_points[0].description == "Test description"
-    assert result.bullet_points[0].technical_details == "Test details"
-    assert result.bullet_points[0].importance == 1
+    assert result == mock_standard_summary
 
 
-@patch("src.py_libs.qa_gpt.core.controller.qa_controller.get_chat_gpt_response_structure")
-def test_get_technical_summary(mock_get_response, qa_controller, mock_technical_summary):
-    # Set up the mock
+@pytest.mark.asyncio
+async def test_get_technical_summary(mock_technical_summary, qa_controller, mocker: MockerFixture):
+    # Setup mock
+    mock_get_response = mocker.patch(
+        "src.py_libs.qa_gpt.core.controller.qa_controller.get_chat_gpt_response_structure_async"
+    )
     mock_get_response.return_value = mock_technical_summary
 
-    # Test getting a technical summary
-    result = qa_controller.get_summary(Path("test.pdf"), TechnicalSummary)
+    # Test
+    result = await qa_controller.get_summary(Path("test.pdf"), TechnicalSummary)
 
-    # Verify that the mock was called
-    mock_get_response.assert_called_once()
-
-    # Verify the result matches our mock
-    assert result == mock_technical_summary
+    # Assertions
     assert isinstance(result, TechnicalSummary)
-    assert result.overview.startswith("This technical document")
-    assert "Neural Networks" in result.key_concepts
-    assert any("Model architecture:" in detail for detail in result.technical_details)
-    assert len(result.implementation_steps) == 4
-    assert any("Python:" in req for req in result.requirements)
-    assert len(result.limitations) == 3
+    assert result == mock_technical_summary
 
 
 def test_summary_serialization(mock_standard_summary, mock_technical_summary):

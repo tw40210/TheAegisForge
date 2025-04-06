@@ -1,3 +1,4 @@
+import asyncio
 import json
 from pathlib import Path
 
@@ -22,7 +23,7 @@ def load_json_from_file(file_path):
         return json.load(file)
 
 
-def handle_file_upload():
+async def handle_file_upload():
     """Handle file upload with validation and process using fetch functions."""
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
 
@@ -51,8 +52,8 @@ def handle_file_upload():
 
         # Process the uploaded file using fetch functions
         with st.spinner("Processing the uploaded file..."):
-            fetch_material_add_summary()
-            fetch_material_add_sets()
+            await fetch_material_add_summary()
+            await fetch_material_add_sets()
             output_question_data()
 
         st.success(f"File '{uploaded_file.name}' uploaded and processed successfully")
@@ -67,7 +68,7 @@ FOLDER_PATH = "output_question_data"
 
 with col1:
     # Add file upload functionality
-    handle_file_upload()
+    asyncio.run(handle_file_upload())
 
     # Display material selection and get selected material and file
     material_folder_path, selected_file = display_material_selection(FOLDER_PATH)
