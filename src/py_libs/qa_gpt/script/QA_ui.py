@@ -14,6 +14,7 @@ from src.py_libs.qa_gpt.core.ui.summary_display import display_summary
 from src.py_libs.qa_gpt.core.utils.fetch_utils import (
     fetch_material_add_sets,
     fetch_material_add_summary,
+    initialize_controllers_and_get_file_id,
     output_question_data,
 )
 
@@ -50,13 +51,20 @@ async def handle_file_upload():
         # Show warning about processing time
         st.warning("⚠️ Processing the file might take several minutes. Please wait...")
 
-        # Process the uploaded file using fetch functions
-        with st.spinner("Processing the uploaded file..."):
-            await fetch_material_add_summary()
-            await fetch_material_add_sets()
-            output_question_data()
+        try:
+            # Get material controller and file ID
+            material_controller, file_id = initialize_controllers_and_get_file_id(file_path)
 
-        st.success(f"File '{uploaded_file.name}' uploaded and processed successfully")
+            # Process the uploaded file using fetch functions
+            with st.spinner("Processing the uploaded file..."):
+                await fetch_material_add_summary(file_id=file_id)
+                await fetch_material_add_sets(file_id=file_id)
+                output_question_data(file_id=file_id)
+
+            st.success(f"File '{uploaded_file.name}' uploaded and processed successfully")
+        except ValueError as e:
+            st.error(str(e))
+            return
 
 
 # Set wide mode

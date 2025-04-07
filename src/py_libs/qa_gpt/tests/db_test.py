@@ -33,6 +33,21 @@ def test_local_material_controller_input():
     test_db_name = "test_local_db"
     test_archive_name = "test_archive"
     test_source_folder_path = Path("./test_data")
+
+    # Clean up any existing archive directory
+    archive_path = Path(f"archived_materials/{test_archive_name}")
+    if archive_path.exists():
+        shutil.rmtree(archive_path)
+
+    # Clean up any existing database files
+    db_path = Path(f"{LOCAL_DB_FOLDER}/{test_db_name}.pkl")
+    if db_path.exists():
+        db_path.unlink()
+
+    # Ensure test data directory exists
+    if not test_source_folder_path.exists():
+        test_source_folder_path.mkdir(exist_ok=True)
+
     test_local_db_controller = LocalDatabaseController(db_name=test_db_name)
     test_material_controller = MaterialController(
         db_controller=test_local_db_controller, archive_name=test_archive_name
@@ -46,6 +61,7 @@ def test_local_material_controller_input():
         list(test_source_folder_path.iterdir())
     )
 
+    # Clean up
     shutil.rmtree(test_material_controller.archive_path)
     test_local_db_controller.db_path.unlink()
 

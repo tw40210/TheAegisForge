@@ -18,19 +18,75 @@ summary_objects = [
 ]
 
 
-async def fetch_material_add_sets():
-    """Fetch material and add question sets to each material."""
+def initialize_controllers() -> MaterialController:
+    """Initialize and return a MaterialController instance.
+
+    Returns:
+        MaterialController: An initialized MaterialController instance.
+    """
     db_name = "my_local_db"
     archive_name = "my_archive"
     local_db_controller = LocalDatabaseController(db_name=db_name)
-    material_controller = MaterialController(
-        db_controller=local_db_controller, archive_name=archive_name
+    return MaterialController(db_controller=local_db_controller, archive_name=archive_name)
+
+
+def initialize_controllers_and_get_file_id(file_path: Path | str) -> tuple[MaterialController, str]:
+    """Initialize controllers and get file ID for a given file path.
+
+    Args:
+        file_path: Path to the file to process.
+
+    Returns:
+        Tuple of (material_controller, file_id)
+
+    Raises:
+        ValueError: If file ID cannot be found for the given file.
+    """
+    # Convert to Path if string
+    if isinstance(file_path, str):
+        file_path = Path(file_path)
+
+    # Initialize controllers
+    material_controller = initialize_controllers()
+
+    # Fetch the material folder to get the file ID
+    material_controller.fetch_material_folder(file_path.parent)
+
+    # Get the file ID from the mapping table
+    file_name = file_path.stem
+    mapping_path = LocalDatabaseController.get_target_path(
+        [material_controller.db_mapping_table_name, file_name]
     )
+    file_id = material_controller.db_controller.get_data(mapping_path)
+
+    if file_id is None:
+        raise ValueError(f"Failed to get file ID for file: {file_path}")
+
+    return material_controller, file_id
+
+
+async def fetch_material_add_sets(file_id: str | None = None, process_all: bool = False):
+    """Fetch material and add question sets to each material.
+
+    Args:
+        file_id: ID of a specific file to process. If None, will process all files.
+        process_all: Must be set to True to process all files when file_id is None.
+    """
+    if file_id is None and not process_all:
+        raise ValueError("Must set process_all=True to process all files when file_id is None")
+
+    material_controller = initialize_controllers()
     qa_controller = QAController()
 
     # Fetch material folder first
     material_controller.fetch_material_folder(Path("./pdf_data"))
     material_table = material_controller.get_material_table()
+
+    # Filter material table if specific file_id is provided
+    if file_id is not None:
+        if file_id not in material_table:
+            raise ValueError(f"File ID {file_id} not found in material table")
+        material_table = {file_id: material_table[file_id]}
 
     total_materials = len(material_table)
     for material_idx, (file_id, file_meta) in enumerate(material_table.items(), 1):
@@ -91,19 +147,28 @@ async def fetch_material_add_sets():
         print(f"\nCompleted processing material {material_idx}/{total_materials} (ID: {file_id})")
 
 
-async def fetch_material_add_summary():
-    """Fetch material and add summary to each material."""
-    db_name = "my_local_db"
-    archive_name = "my_archive"
-    local_db_controller = LocalDatabaseController(db_name=db_name)
-    material_controller = MaterialController(
-        db_controller=local_db_controller, archive_name=archive_name
-    )
+async def fetch_material_add_summary(file_id: str | None = None, process_all: bool = False):
+    """Fetch material and add summary to each material.
+
+    Args:
+        file_id: ID of a specific file to process. If None, will process all files.
+        process_all: Must be set to True to process all files when file_id is None.
+    """
+    if file_id is None and not process_all:
+        raise ValueError("Must set process_all=True to process all files when file_id is None")
+
+    material_controller = initialize_controllers()
     qa_controller = QAController()
 
     # Fetch material folder first
     material_controller.fetch_material_folder(Path("./pdf_data"))
     material_table = material_controller.get_material_table()
+
+    # Filter material table if specific file_id is provided
+    if file_id is not None:
+        if file_id not in material_table:
+            raise ValueError(f"File ID {file_id} not found in material table")
+        material_table = {file_id: material_table[file_id]}
 
     total_materials = len(material_table)
     for material_idx, (file_id, file_meta) in enumerate(material_table.items(), 1):
@@ -139,15 +204,28 @@ async def fetch_material_add_summary():
         print(f"\nCompleted processing material {material_idx}/{total_materials} (ID: {file_id})")
 
 
-def output_question_data():
-    """Output question data to a folder."""
-    db_name = "my_local_db"
-    archive_name = "my_archive"
-    local_db_controller = LocalDatabaseController(db_name=db_name)
-    material_controller = MaterialController(
-        db_controller=local_db_controller, archive_name=archive_name
-    )
+def output_question_data(file_id: str | None = None, process_all: bool = False):
+    """Output question data to a folder.
+
+    Args:
+        file_id: ID of a specific file to process. If None, will process all files.
+        process_all: Must be set to True to process all files when file_id is None.
+    """
+    if file_id is None and not process_all:
+        raise ValueError("Must set process_all=True to process all files when file_id is None")
+
+    material_controller = initialize_controllers()
     output_folder_path = Path("./output_question_data")
     output_folder_path.mkdir(exist_ok=True)
 
-    material_controller.output_material_as_folder(output_folder_path)
+    # Fetch material folder first
+    material_controller.fetch_material_folder(Path("./pdf_data"))
+    material_table = material_controller.get_material_table()
+
+    # Filter material table if specific file_id is provided
+    if file_id is not None:
+        if file_id not in material_table:
+            raise ValueError(f"File ID {file_id} not found in material table")
+        material_table = {file_id: material_table[file_id]}
+
+    material_controller.output_material_as_folder(output_folder_path, material_table)

@@ -174,7 +174,7 @@ class MaterialController:
             )
 
             self.db_controller.save_data(file_meta, db_path)
-            self.db_controller.save_data(archive_file_id, db_mapping_path)
+            self.db_controller.save_data(str(archive_file_id), db_mapping_path)
 
             shutil.copy(file_path, file_meta["file_path"])
 
