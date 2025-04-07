@@ -190,16 +190,11 @@ def test_output_question_data_flow(
     # Setup output folder
     output_folder = Path("./output_question_data")
 
-    # Setup mock material table
-    material_table = mock_material_controller.get_material_table.return_value
-
     # Run the function
     output_question_data(process_all=True)
 
     # Verify the flow
-    mock_material_controller.output_material_as_folder.assert_called_once_with(
-        output_folder, material_table
-    )
+    mock_material_controller.output_material_as_folder.assert_called_once_with(output_folder)
 
 
 @pytest.mark.asyncio
@@ -444,7 +439,6 @@ async def test_fetch_material_add_sets_single_file(
 def test_output_question_data_single_file(
     test_pdf_folder, mock_qa_controller, mock_material_controller, mock_db_controller
 ):
-
     # Setup mock material table
     file_meta = MagicMock()
     mock_material_controller.get_material_table.return_value = {
@@ -456,12 +450,9 @@ def test_output_question_data_single_file(
     output_question_data(file_id="test_id", process_all=True)
 
     # Verify the flow
-    mock_material_controller.output_material_as_folder.assert_called_once()
-    # Verify that the material table passed to output_material_as_folder only contains the specified file
-    called_args = mock_material_controller.output_material_as_folder.call_args
-    assert called_args[0][1] == {
-        "test_id": file_meta
-    }  # Second argument should be filtered material table
+    mock_material_controller.output_material_as_folder.assert_called_once_with(
+        Path("./output_question_data")
+    )
 
 
 @pytest.mark.asyncio

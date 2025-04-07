@@ -340,17 +340,65 @@ def test_get_material_table(test_material_controller):
 
 def test_get_material_mapping_table(test_material_controller):
     # Create some test data
+    file_meta = FileMeta(
+        id=0,
+        file_name="test_file",
+        file_suffix=".pdf",
+        file_path=Path("test_file.pdf"),
+        mc_question_sets={},
+        summaries={},
+    )
     test_material_controller.db_controller.save_data(
-        0,
+        file_meta,
+        test_material_controller.db_controller.get_target_path(
+            [test_material_controller.db_table_name, "0"]
+        ),
+    )
+    test_material_controller.db_controller.save_data(
+        "0",  # String ID
         test_material_controller.db_controller.get_target_path(
             [test_material_controller.db_mapping_table_name, "test_file"]
         ),
     )
 
-    # Test getting mapping table
     mapping_table = test_material_controller.get_material_mapping_table()
+    assert isinstance(mapping_table, dict)
     assert "test_file" in mapping_table
-    assert mapping_table["test_file"] == 0
+    assert isinstance(mapping_table["test_file"], str)
+    assert mapping_table["test_file"] == "0"
+
+
+def test_mapping_table_string_ids(test_material_controller):
+    # Create multiple test files
+    for i in range(3):
+        file_meta = FileMeta(
+            id=i,
+            file_name=f"test_file_{i}",
+            file_suffix=".pdf",
+            file_path=Path(f"test_file_{i}.pdf"),
+            mc_question_sets={},
+            summaries={},
+        )
+        test_material_controller.db_controller.save_data(
+            file_meta,
+            test_material_controller.db_controller.get_target_path(
+                [test_material_controller.db_table_name, str(i)]
+            ),
+        )
+        test_material_controller.db_controller.save_data(
+            str(i),  # String ID
+            test_material_controller.db_controller.get_target_path(
+                [test_material_controller.db_mapping_table_name, f"test_file_{i}"]
+            ),
+        )
+
+    mapping_table = test_material_controller.get_material_mapping_table()
+    assert len(mapping_table) == 3
+
+    # Verify all IDs are strings
+    for file_name, material_id in mapping_table.items():
+        assert isinstance(material_id, str), f"Material ID for {file_name} should be a string"
+        assert material_id.isdigit(), f"Material ID {material_id} should be a numeric string"
 
 
 def test_output_material_as_folder(test_material_controller, sample_question_set, sample_summary):
@@ -472,9 +520,9 @@ def test_remove_material_by_filename(test_material_controller):
         ),
     )
 
-    # Save mapping
+    # Save mapping with string ID
     test_material_controller.db_controller.save_data(
-        0,
+        "0",  # String ID
         test_material_controller.db_controller.get_target_path(
             [test_material_controller.db_mapping_table_name, file_name]
         ),
@@ -533,9 +581,9 @@ def test_remove_material_by_filename_with_associated_data(
         ),
     )
 
-    # Save mapping
+    # Save mapping with string ID
     test_material_controller.db_controller.save_data(
-        0,
+        "0",  # String ID
         test_material_controller.db_controller.get_target_path(
             [test_material_controller.db_mapping_table_name, file_name]
         ),
@@ -580,9 +628,9 @@ def test_remove_material_with_technical_summary(test_material_controller, sample
         ),
     )
 
-    # Save mapping
+    # Save mapping with string ID
     test_material_controller.db_controller.save_data(
-        0,
+        "0",  # String ID
         test_material_controller.db_controller.get_target_path(
             [test_material_controller.db_mapping_table_name, file_name]
         ),

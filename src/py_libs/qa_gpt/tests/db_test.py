@@ -54,9 +54,16 @@ def test_local_material_controller_input():
     )
 
     test_material_controller.fetch_material_folder(test_source_folder_path)
-    assert len(
-        test_material_controller.db_controller.get_data(test_material_controller.db_table_name)
-    ) == len(list(test_source_folder_path.iterdir()))
+
+    # Get the material table and mapping table
+    material_table = test_material_controller.get_material_table()
+    mapping_table = test_material_controller.get_material_mapping_table()
+
+    # Verify that IDs in mapping table are strings
+    for file_name, material_id in mapping_table.items():
+        assert isinstance(material_id, str), f"Material ID for {file_name} should be a string"
+
+    assert len(material_table) == len(list(test_source_folder_path.iterdir()))
     assert len(list(test_material_controller.archive_path.iterdir())) == len(
         list(test_source_folder_path.iterdir())
     )

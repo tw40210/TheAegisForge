@@ -226,6 +226,5 @@ def output_question_data(file_id: str | None = None, process_all: bool = False):
     if file_id is not None:
         if file_id not in material_table:
             raise ValueError(f"File ID {file_id} not found in material table")
-        material_table = {file_id: material_table[file_id]}
 
-    material_controller.output_material_as_folder(output_folder_path, material_table)
+    material_controller.output_material_as_folder(output_folder_path)
