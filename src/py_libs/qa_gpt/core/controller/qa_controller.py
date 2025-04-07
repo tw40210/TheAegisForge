@@ -180,7 +180,7 @@ Choice:
         tasks = []
         for file_path, field_name, field_value in zip(file_paths, field_names, field_values):
             tasks.append(self.get_questions(file_path, field_name, field_value))
-            await asyncio.sleep(5)  # Add 5 seconds delay between calls
+            await asyncio.sleep(3)  # Add 3 seconds delay between calls
         return await asyncio.gather(*tasks)
 
 

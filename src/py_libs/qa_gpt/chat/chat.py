@@ -4,6 +4,7 @@ import openai
 from pydantic import BaseModel
 
 from src.py_libs.qa_gpt.chat.private_keys import openapi_key
+from src.py_libs.qa_gpt.core.utils.rate_limit_decorator import handle_openai_errors
 
 os.environ["OPENAI_API_KEY"] = openapi_key
 sync_client = openai.OpenAI()
@@ -15,6 +16,7 @@ def check_api():
         raise ValueError("OPENAI_API_KEY is not set properly, got empty")
 
 
+@handle_openai_errors()
 async def get_chat_gpt_response_async(messages):
     check_api()
     MODEL = "gpt-4o-mini"
@@ -25,6 +27,7 @@ async def get_chat_gpt_response_async(messages):
     return chat_completion.choices[0].message
 
 
+@handle_openai_errors()
 async def get_chat_gpt_response_structure_async(messages: list, res_obj: BaseModel):
     check_api()
     MODEL = "gpt-4o-mini"
@@ -38,6 +41,7 @@ async def get_chat_gpt_response_structure_async(messages: list, res_obj: BaseMod
     return response.choices[0].message.parsed
 
 
+@handle_openai_errors()
 def get_chat_gpt_response(messages):
     check_api()
     MODEL = "gpt-4o-mini"
@@ -48,6 +52,7 @@ def get_chat_gpt_response(messages):
     return chat_completion.choices[0].message
 
 
+@handle_openai_errors()
 def get_chat_gpt_response_structure(messages: list, res_obj: BaseModel):
     check_api()
     MODEL = "gpt-4o-mini"
