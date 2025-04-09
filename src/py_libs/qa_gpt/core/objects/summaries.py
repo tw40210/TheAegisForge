@@ -143,6 +143,11 @@ class BaseSummary(BaseModel):
         return schema
 
     @classmethod
+    def excluded_fields(cls) -> list[str]:
+        """Returns a list of fields that should be excluded during question set generation."""
+        return []
+
+    @classmethod
     def prompt(cls):
         return """
 I want you to act as a professional summarizer tasked with breaking down the provided input material into concise, clearly separated bullet points. Each bullet point must capture a single, distinct concept, idea, or piece of information from the material. Follow these detailed instructions to ensure clarity and thoroughness:
@@ -221,6 +226,11 @@ class StandardSummary(BaseSummary):
         }
 
     @classmethod
+    def excluded_fields(cls) -> list[str]:
+        """Returns a list of fields that should be excluded during question set generation."""
+        return []
+
+    @classmethod
     def prompt(cls):
         return """
 I want you to act as a professional summarizer tasked with creating a comprehensive standard summary of the provided input material. This summary should include motivation, conclusion, and detailed bullet points. Follow these detailed instructions to ensure clarity and thoroughness:
@@ -297,6 +307,11 @@ class TechnicalSummary(BaseModel):
             "requirements": self.requirements,
             "limitations": self.limitations,
         }
+
+    @classmethod
+    def excluded_fields(cls) -> list[str]:
+        """Returns a list of fields that should be excluded during question set generation."""
+        return []
 
     @classmethod
     def model_json_schema(cls):
@@ -424,6 +439,11 @@ class InnovationSummary(BaseModel):
         }
 
     @classmethod
+    def excluded_fields(cls) -> list[str]:
+        """Returns a list of fields that should be excluded during question set generation."""
+        return ["references"]
+
+    @classmethod
     def model_json_schema(cls):
         return {
             "type": "object",
@@ -501,4 +521,108 @@ Additional Guidelines:
 - Consider both theoretical and practical implications
 - Maintain objectivity while highlighting unique contributions
 - Include specific metrics or evidence of innovation where available
+"""
+
+
+class MetaDataSummary(BaseModel):
+    """Summary specifically for metadata documentation"""
+
+    paper_title: str
+    authors: str
+    journal_name: str
+    publication_date: str
+
+    def __str__(self):
+        split_line = "=" * 20 + "\n"
+        return f"""
+        {split_line}
+        paper_title:{self.paper_title}
+        authors:{self.authors}
+        journal_name:{self.journal_name}
+        publication_date:{self.publication_date}
+        {split_line}
+        """
+
+    def model_dump(self):
+        return {
+            "paper_title": self.paper_title,
+            "authors": self.authors,
+            "journal_name": self.journal_name,
+            "publication_date": self.publication_date,
+        }
+
+    @classmethod
+    def excluded_fields(cls) -> list[str]:
+        """Returns a list of fields that should be excluded during question set generation."""
+        return ["paper_title", "authors", "journal_name", "publication_date"]
+
+    @classmethod
+    def model_json_schema(cls):
+        return {
+            "type": "object",
+            "title": "MetaDataSummary",
+            "description": "Summary specifically for metadata documentation",
+            "properties": {
+                "paper_title": {
+                    "type": "string",
+                    "description": "Title of the paper or document",
+                },
+                "authors": {
+                    "type": "string",
+                    "description": "Authors of the paper or document",
+                },
+                "journal_name": {
+                    "type": "string",
+                    "description": "Name of the journal or publication venue",
+                },
+                "publication_date": {
+                    "type": "string",
+                    "description": "Date of publication",
+                },
+            },
+            "required": [
+                "paper_title",
+                "authors",
+                "journal_name",
+                "publication_date",
+            ],
+        }
+
+    @classmethod
+    def prompt(cls):
+        return """
+I want you to act as a metadata documentation specialist tasked with creating a detailed metadata summary. This summary should focus on capturing the essential metadata information about a document or paper. Follow these detailed instructions to ensure comprehensive coverage:
+
+Role and Objective
+Role: Act as a metadata documentation expert with focus on accurate and complete metadata capture.
+Objective: Produce a structured metadata summary that includes all relevant publication and authorship information.
+
+Structure Requirements:
+
+1. Paper Title:
+   - Provide the complete and accurate title of the document
+   - Include any subtitles or additional title information
+   - Ensure proper formatting and capitalization
+
+2. Authors:
+   - List all authors in the correct order
+   - Include full names and affiliations if available
+   - Maintain proper formatting of author names
+
+3. Journal Name:
+   - Provide the complete name of the publication venue
+   - Include any relevant volume or issue information
+   - Specify the type of publication (journal, conference, etc.)
+
+4. Publication Date:
+   - Include the complete publication date
+   - Use a consistent date format
+   - Specify if the date is approximate or exact
+
+Additional Guidelines:
+- Ensure accuracy in all metadata fields
+- Use consistent formatting throughout
+- Include all available metadata information
+- Maintain proper citation standards
+- Verify the completeness of the information
 """

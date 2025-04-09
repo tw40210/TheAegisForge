@@ -7,15 +7,12 @@ from src.py_libs.qa_gpt.core.controller.db_controller import (
 from src.py_libs.qa_gpt.core.controller.qa_controller import QAController
 from src.py_libs.qa_gpt.core.objects.summaries import (
     InnovationSummary,
+    MetaDataSummary,
     StandardSummary,
     TechnicalSummary,
 )
 
-summary_objects = [
-    StandardSummary,
-    TechnicalSummary,
-    InnovationSummary,
-]
+summary_objects = [StandardSummary, TechnicalSummary, InnovationSummary, MetaDataSummary]
 
 
 def initialize_controllers() -> MaterialController:
@@ -115,7 +112,11 @@ async def fetch_material_add_sets(file_id: str | None = None, process_all: bool 
 
             # Get questions for each top-level attribute
             total_fields = len(summary_dict)
+            excluded_fields = set(summary_object.excluded_fields())
             for field_idx, (field_name, field_value) in enumerate(summary_dict.items(), 1):
+                if field_name in excluded_fields:
+                    print(f"Excluding field {field_idx}/{total_fields}: {field_name}")
+                    continue
                 print(f"Processing field {field_idx}/{total_fields}: {field_name}")
                 # Create prefix for the question set
                 prefix = f"{summary_type}_{field_name}"
