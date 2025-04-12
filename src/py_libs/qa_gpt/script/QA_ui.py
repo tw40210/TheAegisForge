@@ -3,6 +3,7 @@ import asyncio
 import streamlit as st
 
 from src.py_libs.qa_gpt.core.ui.file_upload import handle_file_upload
+from src.py_libs.qa_gpt.core.ui.material_operations import display_material_operations
 from src.py_libs.qa_gpt.core.ui.material_selection import display_material_selection
 from src.py_libs.qa_gpt.core.ui.question_display import (
     display_question_results,
@@ -24,6 +25,9 @@ with col1:
 
     # Display material selection and get selected material and file
     material_folder_path, selected_file = display_material_selection(FOLDER_PATH)
+
+    # Display material operations
+    display_material_operations(material_folder_path)
 
     # Display questions if a file is selected
     if selected_file:

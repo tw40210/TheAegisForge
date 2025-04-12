@@ -55,6 +55,9 @@ async def handle_file_upload():
                 output_question_data(file_id=file_id)
 
             st.success(f"File '{uploaded_file.name}' uploaded and processed successfully")
+            # Clear the selection and refresh the page
+            st.session_state.clear()
+            st.rerun()
         except ValueError as e:
             st.error(str(e))
             return
