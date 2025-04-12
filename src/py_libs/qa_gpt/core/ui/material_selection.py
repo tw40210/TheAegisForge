@@ -3,14 +3,37 @@ import os
 import streamlit as st
 
 
-def get_material_folders(folder_path: str, search_query: str) -> list[str]:
-    """Get filtered material folders based on search query."""
+def get_display_name(folder_name: str) -> str:
+    """Extract display name from folder name by removing the ID suffix.
+
+    Args:
+        folder_name: Full folder name in format "{file_name}_{id}"
+
+    Returns:
+        Display name without the ID suffix
+    """
+    return folder_name.rsplit("_", 1)[0]
+
+
+def get_material_folders(folder_path: str, search_query: str) -> tuple[list[str], dict[str, str]]:
+    """Get filtered material folders based on search query.
+
+    Args:
+        folder_path: Path to the folder containing materials
+        search_query: Search query to filter materials
+
+    Returns:
+        Tuple containing:
+        - List of display names (without IDs)
+        - Dictionary mapping display names to full folder names
+    """
     material_folders = list(os.listdir(folder_path))
-    return [
-        material_folder
-        for material_folder in material_folders
-        if search_query.lower() in material_folder.lower()
-    ]
+    display_to_full = {
+        get_display_name(folder): folder
+        for folder in material_folders
+        if search_query.lower() in folder.lower()
+    }
+    return list(display_to_full.keys()), display_to_full
 
 
 def get_question_files(material_folder_path: str) -> list[str]:
@@ -41,14 +64,15 @@ def display_material_selection(folder_path: str) -> tuple[str | None, str | None
     st.header("Material selection")
 
     search_query = st.text_input("Search material", "")
-    material_folders = get_material_folders(folder_path, search_query)
-    selected_material = st.selectbox("Select a material folder", material_folders)
+    display_names, display_to_full = get_material_folders(folder_path, search_query)
+    selected_display = st.selectbox("Select a material folder", display_names)
 
     selected_file = None
     material_folder_path = None
 
-    if selected_material:
-        material_folder_path = os.path.join(folder_path, selected_material)
+    if selected_display:
+        full_folder_name = display_to_full[selected_display]
+        material_folder_path = os.path.join(folder_path, full_folder_name)
         files = get_question_files(material_folder_path)
         selected_file = st.selectbox("Select a file", files)
 
