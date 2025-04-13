@@ -219,7 +219,6 @@ class StandardSummary(BaseSummary):
 
     def model_dump(self):
         return {
-            "summary_type": "standard",
             "motivation": self.motivation.model_dump(),
             "conclusion": self.conclusion.model_dump(),
             "bullet_points": [bp.model_dump() for bp in self.bullet_points],
