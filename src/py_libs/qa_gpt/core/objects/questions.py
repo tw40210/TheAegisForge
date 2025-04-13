@@ -40,3 +40,16 @@ class MultipleChoiceQuestionSet(BaseModel):
     question_3: MultipleChoiceQuestion
     question_4: MultipleChoiceQuestion
     question_5: MultipleChoiceQuestion
+
+
+class MaterialClipsForTopic(BaseModel):
+    topic: str
+    clips: list[str]
+    reason_of_selecting_clips: list[str]
+
+    def __str__(self):
+        return f"""
+        topic:{self.topic}
+        clips:{self.clips}
+        reason_of_selecting_clips:{self.reason_of_selecting_clips}
+        """

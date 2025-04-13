@@ -7,7 +7,10 @@ import PyPDF2
 from pydantic import BaseModel
 
 from src.py_libs.qa_gpt.chat.chat import get_chat_gpt_response_structure_async
-from src.py_libs.qa_gpt.core.objects.questions import MultipleChoiceQuestionSet
+from src.py_libs.qa_gpt.core.objects.questions import (
+    MaterialClipsForTopic,
+    MultipleChoiceQuestionSet,
+)
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -70,6 +73,12 @@ Summary prompt placeholder
             "content": """
 I want you to act as a professional teacher and instructional designer tasked with creating insightful and comprehensive questions based on input materials provided in PDF format. The goal is to ensure students understand the material thoroughly and can demonstrate mastery of its core concepts. Follow the steps below:
 
+IMPORTANT: You will be provided with carefully selected material clips that focus on a specific topic. These clips are the most relevant excerpts from the material. You MUST:
+1. Base your questions ONLY on the information provided in these clips
+2. Reference specific content from the clips in your questions and explanations
+3. Ensure each question directly relates to the content in the clips
+4. Use the clips as the sole source of information for creating questions
+
 Role and Responsibilities
 Role: Behave like an experienced teacher specializing in creating educational assessments.
 Objective: Create questions that reflect the key ideas and concepts in the input materials and evaluate whether the students fully understand the content.
@@ -114,17 +123,57 @@ Ensure questions are culturally sensitive and accessible to the intended audienc
 
 Format:
 MultipleChoiceQuestion:
-    question_description: The description of the question related to a bullet point to testify if a student fully understands this point.
-    choice_1: A description can easily confuse students if it is true according to the question_description.
-    choice_2: A description can easily confuse students if it is true according to the question_description.
-    choice_3: A description can easily confuse students if it is true according to the question_description.
-    choice_4: A description can easily confuse students if it is true according to the question_description.
+    question_description: The description of the question related to a bullet point to testify if a student fully understands this point. Must be based on the provided material clips.
+    choice_1: A description can easily confuse students if it is true according to the question_description. Must be plausible based on the clips.
+    choice_2: A description can easily confuse students if it is true according to the question_description. Must be plausible based on the clips.
+    choice_3: A description can easily confuse students if it is true according to the question_description. Must be plausible based on the clips.
+    choice_4: A description can easily confuse students if it is true according to the question_description. Must be plausible based on the clips.
 
 
 Choice:
-    choice_description: A description can easily confuse students if it is true according to the corresponding question_description.
+    choice_description: A description can easily confuse students if it is true according to the corresponding question_description. Must reference specific content from the clips.
     answer: If it is true or not, according to the corresponding question_description. This answer should be clear and well explanable.
-    explanation: The reason why it is true or not, according to the corresponding question_description. Please provide as detail as possible to prove the answer.
+    explanation: The reason why it is true or not, according to the corresponding question_description. Please provide as detail as possible to prove the answer, referencing specific information from the material clips.
+            """,
+        }
+        self.material_clips_for_topic_temp = {
+            "role": "system",
+            "content": """
+I want you to act as a professional content curator and educational specialist. Your task is to select the most relevant and informative clips from the provided material that best represent a specific topic. Follow these guidelines:
+
+1. Clip Selection Criteria:
+   - Select 3-5 most relevant clips that directly address the given topic
+   - Each clip should be a complete, self-contained excerpt from the material
+   - Clips should be verbatim from the material without any modifications
+   - Clips should be of appropriate length (typically 1-3 sentences)
+   - Ensure the clips collectively provide comprehensive coverage of the topic
+
+2. For each selected clip:
+   - Provide the exact text from the material
+   - Explain why this clip was chosen, focusing on:
+     * How it directly relates to the topic
+     * What key information or insight it provides
+     * Why it's essential for understanding the topic
+
+3. Format your response as follows:
+   Clip 1:
+   - Text: [exact quote from material]
+   - Reason: [detailed explanation of why this clip was chosen]
+
+   Clip 2:
+   - Text: [exact quote from material]
+   - Reason: [detailed explanation of why this clip was chosen]
+
+   [Continue for all selected clips]
+
+4. Additional Guidelines:
+   - Maintain the original context of each clip
+   - Ensure the clips are exactly from the material without any modifications
+   - Avoid selecting redundant or overlapping clips
+   - Prioritize clips that contain unique or critical information
+   - Consider the educational value and clarity of each clip
+
+Remember: Your goal is to help learners understand the topic by providing the most relevant and informative excerpts from the material, along with clear explanations of their significance.
             """,
         }
 
@@ -137,6 +186,20 @@ Choice:
 
         messages = [sys_summary_message, user_input]
         result = await get_chat_gpt_response_structure_async(messages, res_obj=summary_class)
+        return result
+
+    async def get_material_clips_for_topic(
+        self, file_path: Path, topic: str
+    ) -> MaterialClipsForTopic:
+        material_text = self.preprocess_controller.preprocess(file_path)
+        user_input = self.user_input_temp.copy()
+        user_input.update({"content": f"Material: {material_text}\n\nTopic: {topic}"})
+        sys_material_clips_for_topic_message = self.material_clips_for_topic_temp.copy()
+
+        messages = [sys_material_clips_for_topic_message, user_input]
+        result = await get_chat_gpt_response_structure_async(
+            messages, res_obj=MaterialClipsForTopic
+        )
         return result
 
     async def get_questions(
@@ -152,13 +215,11 @@ Choice:
         Returns:
             MultipleChoiceQuestionSet: A set of questions for the specified field
         """
-        material_text = self.preprocess_controller.preprocess(file_path)
+        material_clips_for_topic = await self.get_material_clips_for_topic(file_path, field_value)
         user_input = self.user_input_temp.copy()
 
         # Create context with the field name and value
-        context = (
-            f"Material: {material_text}\n\n{field_name.replace('_', ' ').title()}:\n{field_value}"
-        )
+        context = f"Material: {material_clips_for_topic}\n\n{field_name.replace('_', ' ').title()}:\n{field_value}"
         user_input.update({"content": context})
         messages = [self.question_message_temp.copy(), user_input]
         return await get_chat_gpt_response_structure_async(
