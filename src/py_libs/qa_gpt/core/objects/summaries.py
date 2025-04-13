@@ -219,6 +219,7 @@ class StandardSummary(BaseSummary):
 
     def model_dump(self):
         return {
+            "summary_type": "standard",
             "motivation": self.motivation.model_dump(),
             "conclusion": self.conclusion.model_dump(),
             "bullet_points": [bp.model_dump() for bp in self.bullet_points],
@@ -227,7 +228,7 @@ class StandardSummary(BaseSummary):
     @classmethod
     def excluded_fields(cls) -> list[str]:
         """Returns a list of fields that should be excluded during question set generation."""
-        return []
+        return ["summary_type"]
 
     @classmethod
     def prompt(cls):
@@ -299,6 +300,7 @@ class TechnicalSummary(BaseModel):
 
     def model_dump(self):
         return {
+            "summary_type": "technical",
             "overview": self.overview,
             "key_concepts": self.key_concepts,
             "technical_details": self.technical_details,
@@ -310,7 +312,7 @@ class TechnicalSummary(BaseModel):
     @classmethod
     def excluded_fields(cls) -> list[str]:
         """Returns a list of fields that should be excluded during question set generation."""
-        return []
+        return ["summary_type"]
 
     @classmethod
     def model_json_schema(cls):
@@ -431,6 +433,7 @@ class InnovationSummary(BaseModel):
 
     def model_dump(self):
         return {
+            "summary_type": "innovation",
             "overview": self.overview,
             "key_concepts": self.key_concepts,
             "innovation_points": [ip.model_dump() for ip in self.innovation_points],
@@ -440,7 +443,7 @@ class InnovationSummary(BaseModel):
     @classmethod
     def excluded_fields(cls) -> list[str]:
         """Returns a list of fields that should be excluded during question set generation."""
-        return ["references"]
+        return ["references", "summary_type"]
 
     @classmethod
     def model_json_schema(cls):
@@ -544,6 +547,7 @@ class MetaDataSummary(BaseModel):
 
     def model_dump(self):
         return {
+            "summary_type": "metadata",
             "paper_title": self.paper_title,
             "authors": self.authors,
             "journal_name": self.journal_name,
@@ -553,7 +557,7 @@ class MetaDataSummary(BaseModel):
     @classmethod
     def excluded_fields(cls) -> list[str]:
         """Returns a list of fields that should be excluded during question set generation."""
-        return ["paper_title", "authors", "journal_name", "publication_date"]
+        return ["paper_title", "authors", "journal_name", "publication_date", "summary_type"]
 
     @classmethod
     def model_json_schema(cls):

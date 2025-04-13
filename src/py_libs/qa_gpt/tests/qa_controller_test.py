@@ -170,7 +170,7 @@ def test_get_questions(qa_controller, test_file_path, mock_questions, mocker):
     # Assertions
     assert isinstance(result, MultipleChoiceQuestionSet)
     assert result == mock_questions
-    mock_get_response.assert_called_once()
+    assert mock_get_response.call_count == 2
     qa_controller.preprocess_controller._pdf_to_text.assert_called_once_with(test_file_path)
 
 
@@ -242,7 +242,7 @@ async def test_get_questions_async(qa_controller, test_file_path, mock_questions
     # Assertions
     assert isinstance(result, MultipleChoiceQuestionSet)
     assert result == mock_questions
-    mock_get_response.assert_called_once()
+    assert mock_get_response.call_count == 2
     qa_controller.preprocess_controller._pdf_to_text.assert_called_once_with(test_file_path)
 
 
@@ -294,7 +294,7 @@ async def test_get_questions_batch_rate_limiting(
     # Assertions
     assert len(results) == 3
     assert all(isinstance(result, MultipleChoiceQuestionSet) for result in results)
-    assert mock_get_response.call_count == 3
+    assert mock_get_response.call_count == 6  # 2 calls per file/field combination
     # Check that the total time is at least 2 seconds (3 calls with 1 second delay between each)
     assert end_time - start_time >= 2.0
 

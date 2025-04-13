@@ -27,9 +27,9 @@ def display_summary_beautifully(
             summary_type = data.get("summary_type", "")
             if summary_type == "standard":
                 _display_standard_summary(data)
-            elif "technical_details" in data:
+            elif summary_type == "technical":
                 _display_technical_summary(data)
-            elif "innovation_points" in data:
+            elif summary_type == "innovation":
                 _display_innovation_summary(data)
             else:
                 _display_generic_json(data)
