@@ -1,0 +1,199 @@
+"""SQLAlchemy ORM schema for the game objects described in the prompt.
+Compatible with SQLite and SQLAlchemy ≥2.0.
+
+To generate the database:
+    >>> from game_schema import Base, engine
+    >>> Base.metadata.create_all(engine)
+"""
+
+from __future__ import annotations
+
+from sqlalchemy import (
+    JSON,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+    create_engine,
+)
+from sqlalchemy.orm import Mapped, declarative_base, mapped_column, relationship
+
+# ---------------------------------------------------------------------------
+# Database engine / Base
+# ---------------------------------------------------------------------------
+
+engine = create_engine("sqlite:///game.db", echo=False, future=True)
+Base = declarative_base()
+
+# ---------------------------------------------------------------------------
+# Core domain tables
+# ---------------------------------------------------------------------------
+
+
+class Account(Base):
+    """Player account."""
+
+    __tablename__ = "accounts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    stories: Mapped[list | None] = mapped_column(JSON, default=list)  # flexible JSON payload
+    status: Mapped[str | None] = mapped_column(String(32))
+    party_sets: Mapped[list | None] = mapped_column(JSON, default=list)
+
+    # --- Relationships ------------------------------------------------------
+
+    heroes: Mapped[list[Hero]] = relationship(
+        back_populates="account", cascade="all, delete-orphan"
+    )
+    inventory: Mapped[list[AccountItem]] = relationship(
+        back_populates="account", cascade="all, delete-orphan"
+    )
+
+    # --- Dunder methods -----------------------------------------------------
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<Account id={self.id} name={self.name!r}>"
+
+
+class Hero(Base):
+    """A hero belonging to an account."""
+
+    __tablename__ = "heroes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    level: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+    # --- Relationships ------------------------------------------------------
+
+    account: Mapped[Account] = relationship(back_populates="heroes")
+    trait_sets: Mapped[list[HeroTraitSet]] = relationship(
+        back_populates="hero", cascade="all, delete-orphan"
+    )
+    equipment: Mapped[list[HeroItem]] = relationship(
+        back_populates="hero", cascade="all, delete-orphan"
+    )
+
+    # --- Dunder methods -----------------------------------------------------
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<Hero id={self.id} name={self.name!r} lvl={self.level}>"
+
+
+class HeroTraitSet(Base):
+    """One of up to 6 trait‑loadouts for a hero (slots 0‑5)."""
+
+    __tablename__ = "hero_trait_sets"
+    __table_args__ = (UniqueConstraint("hero_id", "slot", name="uq_hero_trait_set_slot"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    hero_id: Mapped[int] = mapped_column(ForeignKey("heroes.id"), nullable=False)
+    slot: Mapped[int] = mapped_column(Integer, nullable=False)  # 0‑5
+
+    # --- Relationships ------------------------------------------------------
+
+    hero: Mapped[Hero] = relationship(back_populates="trait_sets")
+    traits: Mapped[list[HeroTrait]] = relationship(
+        back_populates="trait_set", cascade="all, delete-orphan"
+    )
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<HeroTraitSet hero={self.hero_id} slot={self.slot}>"
+
+
+class HeroTrait(Base):
+    """A single trait within a trait set (slots 0‑4)."""
+
+    __tablename__ = "hero_traits"
+    __table_args__ = (UniqueConstraint("trait_set_id", "slot", name="uq_traitset_slot"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    trait_set_id: Mapped[int] = mapped_column(ForeignKey("hero_trait_sets.id"), nullable=False)
+    slot: Mapped[int] = mapped_column(Integer, nullable=False)  # 0‑4
+    trait_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    trait_level: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+    # --- Relationships ------------------------------------------------------
+
+    trait_set: Mapped[HeroTraitSet] = relationship(back_populates="traits")
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return (
+            f"<HeroTrait set={self.trait_set_id} slot={self.slot} "
+            f"trait={self.trait_id} lvl={self.trait_level}>"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Inventory tables
+# ---------------------------------------------------------------------------
+
+
+class Item(Base):
+    """Static item catalog (optional)."""
+
+    __tablename__ = "items"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str | None] = mapped_column(String(64))
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<Item id={self.id} name={self.name!r}>"
+
+
+class AccountItem(Base):
+    """Items held directly in an account's inventory."""
+
+    __tablename__ = "account_items"
+    __table_args__ = (UniqueConstraint("account_id", "item_id", name="uq_account_item"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"), nullable=False)
+    item_id: Mapped[int] = mapped_column(ForeignKey("items.id"), nullable=False)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+    # --- Relationships ------------------------------------------------------
+
+    account: Mapped[Account] = relationship(back_populates="inventory")
+    item: Mapped[Item] = relationship()
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<AccountItem acc={self.account_id} item={self.item_id} qty={self.amount}>"
+
+
+class HeroItem(Base):
+    """Items equipped or carried by a hero."""
+
+    __tablename__ = "hero_items"
+    __table_args__ = (UniqueConstraint("hero_id", "item_id", name="uq_hero_item"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    hero_id: Mapped[int] = mapped_column(ForeignKey("heroes.id"), nullable=False)
+    item_id: Mapped[int] = mapped_column(ForeignKey("items.id"), nullable=False)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+    # --- Relationships ------------------------------------------------------
+
+    hero: Mapped[Hero] = relationship(back_populates="equipment")
+    item: Mapped[Item] = relationship()
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<HeroItem hero={self.hero_id} item={self.item_id} qty={self.amount}>"
+
+
+# ---------------------------------------------------------------------------
+# Utility: metadata creation helper
+# ---------------------------------------------------------------------------
+
+
+def create_schema(sqlite_url: str | None = None, echo: bool = False) -> None:
+    """Convenience helper that creates all tables on the provided SQLite URL.
+
+    Example:
+        create_schema("sqlite:///my_game.db", echo=True)
+    """
+
+    eng = create_engine(sqlite_url or "sqlite:///game.db", echo=echo, future=True)
+    Base.metadata.create_all(eng)
