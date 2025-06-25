@@ -11,5 +11,6 @@ src/private_env.py
 src/py_libs/qa_gpt/chat/private_keys.py
 *.pdf
 *.pkl
+*.db
 /qa_data
 /output_question_data
