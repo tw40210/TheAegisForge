@@ -1,0 +1,455 @@
+hero_traits:
+  # Offensive Traits (Slot 0-1)
+  1:
+    id: 1
+    name: "Berserker Rage"
+    description: "Increases attack power when health is low"
+    type: "Offensive"
+    slot_types: [0, 1]
+    max_level: 10
+    effects:
+      base: "Attack +5% when HP < 50%"
+      scaling: "+3% attack per level when HP < 50%"
+    awakening_cost:
+      trait_essence: 5
+      rage_crystal: 3
+
+  2:
+    id: 2
+    name: "Critical Strike"
+    description: "Increases critical hit chance and damage"
+    type: "Offensive"
+    slot_types: [0, 1]
+    max_level: 10
+    effects:
+      base: "Crit chance +5%, Crit damage +10%"
+      scaling: "+2% crit chance, +5% crit damage per level"
+    awakening_cost:
+      trait_essence: 5
+      sharp_stone: 3
+
+  3:
+    id: 3
+    name: "Elemental Mastery"
+    description: "Enhances elemental damage based on hero's element"
+    type: "Offensive"
+    slot_types: [0, 1]
+    max_level: 10
+    effects:
+      base: "Elemental damage +15%"
+      scaling: "+5% elemental damage per level"
+    awakening_cost:
+      trait_essence: 5
+      elemental_core: 3
+
+  4:
+    id: 4
+    name: "Armor Pierce"
+    description: "Ignores a portion of enemy defense"
+    type: "Offensive"
+    slot_types: [0, 1]
+    max_level: 10
+    effects:
+      base: "Ignore 10% of enemy defense"
+      scaling: "+3% defense ignore per level"
+    awakening_cost:
+      trait_essence: 5
+      piercing_shard: 3
+
+  5:
+    id: 5
+    name: "Multi Strike"
+    description: "Chance to attack multiple times in one turn"
+    type: "Offensive"
+    slot_types: [0, 1]
+    max_level: 5
+    effects:
+      base: "10% chance for double attack"
+      scaling: "+5% double attack chance per level"
+    awakening_cost:
+      trait_essence: 8
+      speed_crystal: 5
+
+  # Defensive Traits (Slot 2-3)
+  6:
+    id: 6
+    name: "Iron Skin"
+    description: "Reduces incoming physical damage"
+    type: "Defensive"
+    slot_types: [2, 3]
+    max_level: 10
+    effects:
+      base: "Physical damage taken -10%"
+      scaling: "-3% physical damage taken per level"
+    awakening_cost:
+      trait_essence: 5
+      iron_plate: 3
+
+  7:
+    id: 7
+    name: "Magic Resistance"
+    description: "Reduces incoming magical damage"
+    type: "Defensive"
+    slot_types: [2, 3]
+    max_level: 10
+    effects:
+      base: "Magic damage taken -10%"
+      scaling: "-3% magic damage taken per level"
+    awakening_cost:
+      trait_essence: 5
+      magic_ward: 3
+
+  8:
+    id: 8
+    name: "Regeneration"
+    description: "Recovers health at the start of each turn"
+    type: "Defensive"
+    slot_types: [2, 3]
+    max_level: 10
+    effects:
+      base: "Heal 3% max HP per turn"
+      scaling: "+1% healing per level"
+    awakening_cost:
+      trait_essence: 5
+      life_crystal: 3
+
+  9:
+    id: 9
+    name: "Shield Wall"
+    description: "Chance to block incoming attacks completely"
+    type: "Defensive"
+    slot_types: [2, 3]
+    max_level: 10
+    effects:
+      base: "5% chance to block attacks"
+      scaling: "+2% block chance per level"
+    awakening_cost:
+      trait_essence: 5
+      fortress_stone: 3
+
+  10:
+    id: 10
+    name: "Damage Reflection"
+    description: "Reflects a portion of received damage back to attacker"
+    type: "Defensive"
+    slot_types: [2, 3]
+    max_level: 10
+    effects:
+      base: "Reflect 10% of damage taken"
+      scaling: "+3% reflection per level"
+    awakening_cost:
+      trait_essence: 5
+      mirror_shard: 3
+
+  # Utility Traits (Slot 4)
+  11:
+    id: 11
+    name: "Speed Boost"
+    description: "Increases action speed and turn frequency"
+    type: "Utility"
+    slot_types: [4]
+    max_level: 10
+    effects:
+      base: "Speed +15%"
+      scaling: "+5% speed per level"
+    awakening_cost:
+      trait_essence: 5
+      wind_essence: 3
+
+  12:
+    id: 12
+    name: "Mana Efficiency"
+    description: "Reduces skill cooldowns and mana costs"
+    type: "Utility"
+    slot_types: [4]
+    max_level: 10
+    effects:
+      base: "Skill cooldown -10%, Mana cost -10%"
+      scaling: "-3% cooldown and mana cost per level"
+    awakening_cost:
+      trait_essence: 5
+      mana_crystal: 3
+
+  13:
+    id: 13
+    name: "Leadership"
+    description: "Boosts nearby allies' performance"
+    type: "Utility"
+    slot_types: [4]
+    max_level: 10
+    effects:
+      base: "Allies in range gain +5% all stats"
+      scaling: "+2% stat boost per level"
+    awakening_cost:
+      trait_essence: 5
+      command_insignia: 3
+
+  14:
+    id: 14
+    name: "Treasure Hunter"
+    description: "Increases rewards from battles and exploration"
+    type: "Utility"
+    slot_types: [4]
+    max_level: 10
+    effects:
+      base: "Bonus rewards +20%"
+      scaling: "+5% bonus rewards per level"
+    awakening_cost:
+      trait_essence: 5
+      lucky_coin: 3
+
+  15:
+    id: 15
+    name: "Resurrection"
+    description: "Chance to revive upon death with partial health"
+    type: "Utility"
+    slot_types: [4]
+    max_level: 5
+    effects:
+      base: "10% chance to revive with 25% HP"
+      scaling: "+5% revive chance, +10% revive HP per level"
+    awakening_cost:
+      trait_essence: 10
+      phoenix_down: 5
+
+  # Legendary Traits (Any Slot, Very Rare)
+  16:
+    id: 16
+    name: "Divine Blessing"
+    description: "Grants immunity to debuffs and minor stat boost"
+    type: "Legendary"
+    slot_types: [0, 1, 2, 3, 4]
+    max_level: 5
+    effects:
+      base: "Debuff immunity, +10% all stats"
+      scaling: "+5% all stats per level"
+    awakening_cost:
+      legendary_essence: 20
+      divine_fragment: 10
+      celestial_blessing: 5
+
+  17:
+    id: 17
+    name: "Void Mastery"
+    description: "Manipulates space and time in combat"
+    type: "Legendary"
+    slot_types: [0, 1, 2, 3, 4]
+    max_level: 5
+    effects:
+      base: "20% chance to avoid attacks, 15% chance to reset skill cooldowns"
+      scaling: "+5% avoid chance, +5% reset chance per level"
+    awakening_cost:
+      legendary_essence: 20
+      void_fragment: 10
+      reality_crystal: 5
+
+  18:
+    id: 18
+    name: "Dragon Soul"
+    description: "Channels the power of ancient dragons"
+    type: "Legendary"
+    slot_types: [0, 1, 2, 3, 4]
+    max_level: 5
+    effects:
+      base: "Transform into dragon form for 3 turns when HP < 30%"
+      scaling: "+1 turn duration, +10% dragon form stats per level"
+    awakening_cost:
+      legendary_essence: 20
+      dragon_soul: 10
+      ancient_power: 5
+
+  19:
+    id: 19
+    name: "Phoenix Heart"
+    description: "Embodies the immortal flame of the phoenix"
+    type: "Legendary"
+    slot_types: [0, 1, 2, 3, 4]
+    max_level: 5
+    effects:
+      base: "Automatic resurrection once per battle, +50% fire damage"
+      scaling: "+25% fire damage, -1 turn resurrection cooldown per level"
+    awakening_cost:
+      legendary_essence: 20
+      phoenix_heart: 10
+      eternal_flame: 5
+
+  20:
+    id: 20
+    name: "God's Wrath"
+    description: "Channels divine power in moments of rage"
+    type: "Legendary"
+    slot_types: [0, 1, 2, 3, 4]
+    max_level: 5
+    effects:
+      base: "When ally dies, gain +100% damage for 5 turns"
+      scaling: "+50% damage bonus, +2 turn duration per level"
+    awakening_cost:
+      legendary_essence: 20
+      divine_wrath: 10
+      god_power: 5
+
+  # Elemental Traits
+  21:
+    id: 21
+    name: "Inferno"
+    description: "Mastery over fire and heat"
+    type: "Elemental"
+    slot_types: [0, 1, 2]
+    max_level: 10
+    effects:
+      base: "Fire damage +20%, chance to burn enemies"
+      scaling: "+5% fire damage, +3% burn chance per level"
+    awakening_cost:
+      trait_essence: 5
+      fire_core: 3
+
+  22:
+    id: 22
+    name: "Blizzard"
+    description: "Command over ice and cold"
+    type: "Elemental"
+    slot_types: [0, 1, 2]
+    max_level: 10
+    effects:
+      base: "Ice damage +20%, chance to freeze enemies"
+      scaling: "+5% ice damage, +3% freeze chance per level"
+    awakening_cost:
+      trait_essence: 5
+      ice_core: 3
+
+  23:
+    id: 23
+    name: "Lightning"
+    description: "Control over electricity and storms"
+    type: "Elemental"
+    slot_types: [0, 1, 2]
+    max_level: 10
+    effects:
+      base: "Lightning damage +20%, chance to stun enemies"
+      scaling: "+5% lightning damage, +3% stun chance per level"
+    awakening_cost:
+      trait_essence: 5
+      storm_core: 3
+
+  24:
+    id: 24
+    name: "Earth Shaker"
+    description: "Power over earth and stone"
+    type: "Elemental"
+    slot_types: [0, 1, 2]
+    max_level: 10
+    effects:
+      base: "Earth damage +20%, chance to slow enemies"
+      scaling: "+5% earth damage, +3% slow chance per level"
+    awakening_cost:
+      trait_essence: 5
+      earth_core: 3
+
+  25:
+    id: 25
+    name: "Wind Walker"
+    description: "Mastery of wind and movement"
+    type: "Elemental"
+    slot_types: [0, 1, 4]
+    max_level: 10
+    effects:
+      base: "Wind damage +20%, +15% speed"
+      scaling: "+5% wind damage, +5% speed per level"
+    awakening_cost:
+      trait_essence: 5
+      wind_core: 3
+
+# Trait Categories
+trait_categories:
+  by_type:
+    Offensive: [1, 2, 3, 4, 5]
+    Defensive: [6, 7, 8, 9, 10]
+    Utility: [11, 12, 13, 14, 15]
+    Legendary: [16, 17, 18, 19, 20]
+    Elemental: [21, 22, 23, 24, 25]
+
+  by_slot:
+    slot_0: [1, 2, 3, 4, 5, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+    slot_1: [1, 2, 3, 4, 5, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+    slot_2: [6, 7, 8, 9, 10, 16, 17, 18, 19, 20, 21, 22, 23, 24]
+    slot_3: [6, 7, 8, 9, 10, 16, 17, 18, 19, 20]
+    slot_4: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25]
+
+  by_rarity:
+    Common: [1, 2, 6, 7, 11, 12]
+    Rare: [3, 4, 8, 9, 13, 14, 21, 22, 23, 24, 25]
+    Epic: [5, 10, 15]
+    Legendary: [16, 17, 18, 19, 20]
+
+# Trait Awakening Materials
+trait_materials:
+  common_materials:
+    trait_essence:
+      name: "Trait Essence"
+      description: "Basic material for trait enhancement"
+      sources: ["Daily dungeons", "Battle rewards", "Shop"]
+    
+    sharp_stone:
+      name: "Sharp Stone"
+      description: "Enhances critical strike abilities"
+      sources: ["Mountain dungeons", "Mining"]
+    
+    iron_plate:
+      name: "Iron Plate"
+      description: "Strengthens defensive capabilities"
+      sources: ["Armor crafting", "Metal dungeons"]
+    
+    life_crystal:
+      name: "Life Crystal"
+      description: "Contains healing energy"
+      sources: ["Forest dungeons", "Herb gathering"]
+
+  rare_materials:
+    elemental_core:
+      name: "Elemental Core"
+      description: "Concentrated elemental energy"
+      sources: ["Elemental dungeons", "Boss fights"]
+    
+    fire_core:
+      name: "Fire Core"
+      description: "Pure fire essence"
+      sources: ["Volcano dungeons", "Fire elementals"]
+    
+    ice_core:
+      name: "Ice Core"
+      description: "Frozen elemental power"
+      sources: ["Glacier dungeons", "Ice elementals"]
+
+  legendary_materials:
+    legendary_essence:
+      name: "Legendary Essence"
+      description: "Essence of legendary power"
+      sources: ["Legendary bosses", "Special events"]
+    
+    divine_fragment:
+      name: "Divine Fragment"
+      description: "Fragment of divine power"
+      sources: ["Divine realm", "God-tier bosses"]
+    
+    dragon_soul:
+      name: "Dragon Soul"
+      description: "Soul of an ancient dragon"
+      sources: ["Dragon lairs", "Ancient dungeons"]
+
+# Trait Combinations and Synergies
+trait_synergies:
+  berserker_build:
+    traits: [1, 5, 11]  # Berserker Rage + Multi Strike + Speed Boost
+    bonus: "When HP < 25%, gain additional 50% attack speed"
+  
+  tank_build:
+    traits: [6, 7, 8]   # Iron Skin + Magic Resistance + Regeneration
+    bonus: "Damage taken reduced by additional 15%"
+  
+  elemental_master:
+    traits: [3, 21, 22] # Elemental Mastery + any two elemental traits
+    bonus: "Can use all elemental abilities regardless of hero element"
+  
+  divine_ascension:
+    traits: [16, 18, 19] # Divine Blessing + Dragon Soul + Phoenix Heart
+    bonus: "Become immune to all damage for 1 turn when first taking fatal damage" 

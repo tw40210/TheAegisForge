@@ -1,0 +1,479 @@
+heroes:
+  # Common Heroes (Tier 1)
+  1:
+    id: 1
+    name: "Knight"
+    rarity: "Common"
+    element: "Earth"
+    class: "Tank"
+    description: "A stalwart defender with unwavering courage and strong defensive capabilities."
+    base_stats:
+      health: 120
+      attack: 65
+      defense: 90
+      speed: 45
+      magic: 30
+    max_level: 60
+    skills:
+      - "Shield Bash"
+      - "Defensive Stance"
+      - "Taunt"
+    awakening_materials:
+      - knight_essence: 10
+      - iron_ore: 20
+
+  2:
+    id: 2
+    name: "Archer"
+    rarity: "Common"
+    element: "Wind"
+    class: "Ranged"
+    description: "A skilled marksman with exceptional accuracy and agility."
+    base_stats:
+      health: 85
+      attack: 80
+      defense: 50
+      speed: 85
+      magic: 35
+    max_level: 60
+    skills:
+      - "Multi Shot"
+      - "Precision Strike"
+      - "Wind Arrow"
+    awakening_materials:
+      - archer_essence: 10
+      - wind_crystal: 15
+
+  3:
+    id: 3
+    name: "Mage"
+    rarity: "Common"
+    element: "Fire"
+    class: "Magic"
+    description: "A wielder of arcane forces with devastating magical attacks."
+    base_stats:
+      health: 70
+      attack: 45
+      defense: 40
+      speed: 70
+      magic: 100
+    max_level: 60
+    skills:
+      - "Fireball"
+      - "Magic Shield"
+      - "Mana Burn"
+    awakening_materials:
+      - mage_essence: 10
+      - fire_crystal: 15
+
+  # Rare Heroes (Tier 2)
+  4:
+    id: 4
+    name: "Dark Knight"
+    rarity: "Rare"
+    element: "Dark"
+    class: "Tank"
+    description: "A fallen knight who harnesses dark powers for incredible defensive abilities."
+    base_stats:
+      health: 150
+      attack: 75
+      defense: 110
+      speed: 50
+      magic: 60
+    max_level: 80
+    skills:
+      - "Dark Shield"
+      - "Life Drain"
+      - "Shadow Strike"
+      - "Dark Aura"
+    awakening_materials:
+      - dark_essence: 20
+      - shadow_steel: 15
+      - corrupted_gem: 5
+
+  5:
+    id: 5
+    name: "Fire Mage"
+    rarity: "Rare"
+    element: "Fire"
+    class: "Magic"
+    description: "A master of flame magic with explosive offensive capabilities."
+    base_stats:
+      health: 90
+      attack: 55
+      defense: 55
+      speed: 80
+      magic: 130
+    max_level: 80
+    skills:
+      - "Meteor"
+      - "Fire Wall"
+      - "Inferno"
+      - "Phoenix Form"
+    awakening_materials:
+      - fire_essence: 20
+      - phoenix_feather: 10
+      - flame_core: 5
+
+  6:
+    id: 6
+    name: "Ice Queen"
+    rarity: "Rare"
+    element: "Ice"
+    class: "Magic"
+    description: "A regal sorceress who commands the power of eternal winter."
+    base_stats:
+      health: 95
+      attack: 50
+      defense: 65
+      speed: 75
+      magic: 125
+    max_level: 80
+    skills:
+      - "Blizzard"
+      - "Ice Prison"
+      - "Frost Armor"
+      - "Absolute Zero"
+    awakening_materials:
+      - ice_essence: 20
+      - eternal_ice: 10
+      - frozen_heart: 5
+
+  7:
+    id: 7
+    name: "Shadow Assassin"
+    rarity: "Rare"
+    element: "Dark"
+    class: "Assassin"
+    description: "A deadly killer who strikes from the shadows with lethal precision."
+    base_stats:
+      health: 80
+      attack: 110
+      defense: 45
+      speed: 120
+      magic: 55
+    max_level: 80
+    skills:
+      - "Shadow Step"
+      - "Assassination"
+      - "Smoke Bomb"
+      - "Critical Strike"
+    awakening_materials:
+      - shadow_essence: 20
+      - void_blade: 10
+      - assassin_mark: 5
+
+  8:
+    id: 8
+    name: "Holy Paladin"
+    rarity: "Rare"
+    element: "Light"
+    class: "Support"
+    description: "A divine warrior blessed with healing powers and righteous strength."
+    base_stats:
+      health: 110
+      attack: 70
+      defense: 85
+      speed: 60
+      magic: 90
+    max_level: 80
+    skills:
+      - "Heal"
+      - "Divine Strike"
+      - "Holy Barrier"
+      - "Blessing"
+    awakening_materials:
+      - light_essence: 20
+      - holy_relic: 10
+      - angel_wing: 5
+
+  9:
+    id: 9
+    name: "Void Sorcerer"
+    rarity: "Rare"
+    element: "Dark"
+    class: "Magic"
+    description: "A master of void magic who manipulates reality itself."
+    base_stats:
+      health: 85
+      attack: 60
+      defense: 50
+      speed: 85
+      magic: 135
+    max_level: 80
+    skills:
+      - "Void Blast"
+      - "Reality Rift"
+      - "Time Distortion"
+      - "Null Magic"
+    awakening_materials:
+      - void_essence: 20
+      - reality_fragment: 10
+      - chaos_orb: 5
+
+  # Epic Heroes (Tier 3)
+  10:
+    id: 10
+    name: "Epic Hero"
+    rarity: "Epic"
+    element: "Light"
+    class: "All-Rounder"
+    description: "A legendary hero with balanced abilities and incredible potential."
+    base_stats:
+      health: 130
+      attack: 95
+      defense: 80
+      speed: 90
+      magic: 110
+    max_level: 100
+    skills:
+      - "Epic Strike"
+      - "Heroic Charge"
+      - "Battle Cry"
+      - "Legendary Power"
+      - "Ultimate Technique"
+    awakening_materials:
+      - epic_essence: 30
+      - hero_soul: 15
+      - legendary_crystal: 10
+
+  11:
+    id: 11
+    name: "Mythic Hero"
+    rarity: "Epic"
+    element: "Cosmic"
+    class: "Transcendent"
+    description: "A mythical being who transcends mortal limitations."
+    base_stats:
+      health: 140
+      attack: 100
+      defense: 85
+      speed: 95
+      magic: 120
+    max_level: 100
+    skills:
+      - "Cosmic Ray"
+      - "Stellar Storm"
+      - "Void Walk"
+      - "Mythic Transformation"
+      - "Reality Shatter"
+    awakening_materials:
+      - mythic_essence: 30
+      - star_fragment: 15
+      - cosmic_core: 10
+
+  12:
+    id: 12
+    name: "Divine Hero"
+    rarity: "Epic"
+    element: "Divine"
+    class: "Transcendent"
+    description: "A divine being blessed by the gods themselves."
+    base_stats:
+      health: 135
+      attack: 105
+      defense: 90
+      speed: 85
+      magic: 125
+    max_level: 100
+    skills:
+      - "Divine Judgment"
+      - "Heaven's Wrath"
+      - "Sacred Blessing"
+      - "Godly Presence"
+      - "Miracle"
+    awakening_materials:
+      - divine_essence: 30
+      - god_fragment: 15
+      - celestial_core: 10
+
+  # Legendary Heroes (Tier 4)
+  13:
+    id: 13
+    name: "Legendary Dragon"
+    rarity: "Legendary"
+    element: "Fire"
+    class: "Dragon"
+    description: "An ancient dragon with immense power and wisdom accumulated over millennia."
+    base_stats:
+      health: 200
+      attack: 140
+      defense: 120
+      speed: 80
+      magic: 150
+    max_level: 120
+    skills:
+      - "Dragon Breath"
+      - "Ancient Roar"
+      - "Flame Tornado"
+      - "Dragon Form"
+      - "Infernal Rage"
+      - "Apocalypse Flame"
+    awakening_materials:
+      - dragon_essence: 50
+      - ancient_scale: 25
+      - dragon_heart: 15
+      - legendary_core: 5
+
+  14:
+    id: 14
+    name: "Ancient Dragon"
+    rarity: "Legendary"
+    element: "Earth"
+    class: "Dragon"
+    description: "The oldest of all dragons, possessing unmatched wisdom and earth-shaking power."
+    base_stats:
+      health: 220
+      attack: 130
+      defense: 140
+      speed: 70
+      magic: 160
+    max_level: 120
+    skills:
+      - "Earthquake"
+      - "Mountain Crush"
+      - "Ancient Wisdom"
+      - "Earth Dragon Form"
+      - "Tectonic Shift"
+      - "World Breaker"
+    awakening_materials:
+      - ancient_essence: 50
+      - primordial_stone: 25
+      - earth_core: 15
+      - legendary_core: 5
+
+  15:
+    id: 15
+    name: "Divine Phoenix"
+    rarity: "Legendary"
+    element: "Fire"
+    class: "Phoenix"
+    description: "The immortal phoenix, symbol of rebirth and eternal flame."
+    base_stats:
+      health: 180
+      attack: 150
+      defense: 100
+      speed: 110
+      magic: 170
+    max_level: 120
+    skills:
+      - "Phoenix Fire"
+      - "Rebirth"
+      - "Solar Flare"
+      - "Immortal Form"
+      - "Eternal Flame"
+      - "Nirvana"
+    awakening_materials:
+      - phoenix_essence: 50
+      - rebirth_flame: 25
+      - immortal_feather: 15
+      - legendary_core: 5
+
+  16:
+    id: 16
+    name: "God of War"
+    rarity: "Legendary"
+    element: "Divine"
+    class: "God"
+    description: "The ultimate warrior deity, master of all combat arts and divine power."
+    base_stats:
+      health: 190
+      attack: 160
+      defense: 130
+      speed: 100
+      magic: 140
+    max_level: 120
+    skills:
+      - "Divine Wrath"
+      - "God Strike"
+      - "War Cry"
+      - "Berserker Mode"
+      - "Omnislash"
+      - "Ragnarok"
+    awakening_materials:
+      - war_essence: 50
+      - divine_weapon: 25
+      - god_blood: 15
+      - legendary_core: 5
+
+  # Special Event Heroes
+  17:
+    id: 17
+    name: "Guaranteed Rare"
+    rarity: "Rare"
+    element: "Light"
+    class: "Special"
+    description: "A special hero guaranteed from ten-pull events."
+    base_stats:
+      health: 100
+      attack: 85
+      defense: 75
+      speed: 80
+      magic: 95
+    max_level: 80
+    skills:
+      - "Guaranteed Strike"
+      - "Lucky Charm"
+      - "Special Ability"
+      - "Event Power"
+    awakening_materials:
+      - special_essence: 20
+      - event_token: 15
+      - rare_crystal: 5
+
+  18:
+    id: 18
+    name: "Guaranteed Epic"
+    rarity: "Epic"
+    element: "Cosmic"
+    class: "Special"
+    description: "A special epic hero guaranteed from premium ten-pull events."
+    base_stats:
+      health: 125
+      attack: 100
+      defense: 85
+      speed: 90
+      magic: 115
+    max_level: 100
+    skills:
+      - "Epic Guarantee"
+      - "Premium Power"
+      - "Special Evolution"
+      - "Event Mastery"
+      - "Ultimate Guarantee"
+    awakening_materials:
+      - epic_essence: 30
+      - premium_token: 20
+      - guaranteed_crystal: 10
+
+# Hero Categories
+hero_categories:
+  rarity_tiers:
+    Common: [1, 2, 3]
+    Rare: [4, 5, 6, 7, 8, 9]
+    Epic: [10, 11, 12]
+    Legendary: [13, 14, 15, 16]
+    Special: [17, 18]
+
+  elements:
+    Fire: [3, 5, 13, 15]
+    Ice: [6]
+    Earth: [1, 14]
+    Wind: [2]
+    Light: [8, 10, 17]
+    Dark: [4, 7, 9]
+    Divine: [12, 16]
+    Cosmic: [11, 18]
+
+  classes:
+    Tank: [1, 4]
+    Ranged: [2]
+    Magic: [3, 5, 6, 9]
+    Assassin: [7]
+    Support: [8]
+    All-Rounder: [10]
+    Transcendent: [11, 12]
+    Dragon: [13, 14]
+    Phoenix: [15]
+    God: [16]
+    Special: [17, 18] 

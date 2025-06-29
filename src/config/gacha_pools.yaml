@@ -1,0 +1,66 @@
+gacha_pools:
+  standard_pool:
+    name: "Standard Hero Pool"
+    description: "Basic gacha pool with common and rare heroes"
+    requiring_item_id: 1  # Standard gacha ticket
+    num_requiring_item: 1
+    heroes:
+      - hero_id: 1  # Knight
+        probability: 0.4
+      - hero_id: 2  # Archer
+        probability: 0.3
+      - hero_id: 3  # Mage
+        probability: 0.2
+      - hero_id: 13  # Legendary Dragon
+        probability: 0.1
+
+  premium_pool:
+    name: "Premium Hero Pool"
+    description: "Premium gacha pool with rare and legendary heroes"
+    requiring_item_id: 2  # Premium gacha ticket
+    num_requiring_item: 1
+    heroes:
+      - hero_id: 4  # Dark Knight
+        probability: 0.25
+      - hero_id: 5  # Fire Mage
+        probability: 0.25
+      - hero_id: 6  # Ice Queen
+        probability: 0.25
+      - hero_id: 14  # Ancient Dragon
+        probability: 0.15
+      - hero_id: 16  # God of War
+        probability: 0.1
+
+  rare_pool:
+    name: "Rare Hero Pool"
+    description: "Special gacha pool with only rare and legendary heroes"
+    requiring_item_id: 3  # Rare gacha ticket
+    num_requiring_item: 1
+    heroes:
+      - hero_id: 7  # Shadow Assassin
+        probability: 0.3
+      - hero_id: 8  # Holy Paladin
+        probability: 0.3
+      - hero_id: 9  # Void Sorcerer
+        probability: 0.25
+      - hero_id: 15  # Divine Phoenix
+        probability: 0.15
+
+  ten_pull_pool:
+    name: "Ten Pull Premium Pool"
+    description: "Premium ten-pull gacha with guaranteed rare hero"
+    requiring_item_id: 2  # Premium gacha ticket
+    num_requiring_item: 10
+    heroes:
+      - hero_id: 4  # Dark Knight
+        probability: 0.2
+      - hero_id: 5  # Fire Mage
+        probability: 0.2
+      - hero_id: 6  # Ice Queen
+        probability: 0.2
+      - hero_id: 14  # Ancient Dragon
+        probability: 0.2
+      - hero_id: 16  # God of War
+        probability: 0.1
+      - hero_id: 15  # Divine Phoenix
+        probability: 0.1 

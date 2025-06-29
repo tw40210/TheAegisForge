@@ -1,5 +1,7 @@
 import sys
+from pathlib import Path
 
+import yaml
 from sqlalchemy.orm import Session
 
 from src.py_libs.controllers.account_controller import AccountController
@@ -16,6 +18,16 @@ from src.py_libs.controllers.sql_db_controller import (
 )
 
 
+def load_config_file(config_path: str) -> dict:
+    """Load a YAML configuration file."""
+    config_file = Path(config_path)
+    if not config_file.exists():
+        raise FileNotFoundError(f"Configuration file not found: {config_path}")
+
+    with open(config_file, encoding="utf-8") as file:
+        return yaml.safe_load(file)
+
+
 def create_database():
     """Create the database schema."""
     print("Creating database schema...")
@@ -23,25 +35,53 @@ def create_database():
     print("✓ Database schema created successfully!")
 
 
+def populate_items_from_config():
+    """Populate items table from items.yaml configuration."""
+    print("\nLoading items from configuration...")
+
+    try:
+        items_config = load_config_file("src/config/items.yaml")
+
+        with Session(engine) as session:
+            items_data = items_config.get("items", {})
+            items_to_add = []
+
+            for item_data in items_data.values():
+                item = Item(id=item_data["id"], name=item_data["name"])
+                items_to_add.append(item)
+
+            session.add_all(items_to_add)
+            session.commit()
+
+            print(f"✓ Added {len(items_to_add)} items from configuration")
+
+    except Exception as e:
+        print(f"⚠️  Warning: Could not load items config: {e}")
+        print("   Creating basic sample items instead...")
+
+        # Fallback to basic items if config loading fails
+        with Session(engine) as session:
+            items = [
+                Item(id=1, name="Standard Gacha Ticket"),
+                Item(id=2, name="Premium Gacha Ticket"),
+                Item(id=3, name="Rare Gacha Ticket"),
+                Item(id=4, name="Gold Coins"),
+                Item(id=5, name="Gems"),
+                Item(id=11, name="Iron Sword"),
+                Item(id=31, name="Leather Armor"),
+                Item(id=51, name="Health Potion"),
+            ]
+            session.add_all(items)
+            session.commit()
+            print("✓ Created basic sample items")
+
+
 def populate_sample_data():
-    """Populate the database with sample data."""
+    """Populate the database with sample accounts and heroes."""
     print("\nPopulating database with sample data...")
 
     with Session(engine) as session:
-        # Create sample items
-        items = [
-            Item(id=1, name="Health Potion"),
-            Item(id=2, name="Mana Potion"),
-            Item(id=3, name="Iron Sword"),
-            Item(id=4, name="Leather Armor"),
-            Item(id=5, name="Magic Ring"),
-            Item(id=6, name="Gold Coin"),
-            Item(id=7, name="Fire Scroll"),
-            Item(id=8, name="Healing Crystal"),
-        ]
-        session.add_all(items)
-
-        # Create sample accounts
+        # Create sample accounts with gacha tickets and starter items
         accounts = [
             Account(
                 name="Player1",
@@ -55,67 +95,100 @@ def populate_sample_data():
                 status="active",
                 party_sets=[{"name": "Adventure Party", "heroes": [3]}],
             ),
-            Account(name="TestUser", stories=[], status="inactive", party_sets=[]),
+            Account(
+                name="NewPlayer",
+                stories=[],
+                status="active",
+                party_sets=[],
+            ),
         ]
         session.add_all(accounts)
         session.commit()
 
-        # Create sample heroes
+        # Create sample heroes using names from the hero config
+        try:
+            heroes_config = load_config_file("src/config/heroes.yaml")
+            hero_data = heroes_config.get("heroes", {})
+            hero_names = [
+                hero_info.get("name", f"Hero {hero_id}") for hero_id, hero_info in hero_data.items()
+            ]
+        except Exception:
+            hero_names = ["Knight", "Archer", "Mage", "Fire Mage"]
+
         heroes = [
-            Hero(account_id=1, name="Aragorn", level=15),
-            Hero(account_id=1, name="Gandalf", level=20),
-            Hero(account_id=2, name="Legolas", level=12),
-            Hero(account_id=3, name="Gimli", level=8),
+            Hero(account_id=1, name=hero_names[0] if len(hero_names) > 0 else "Knight", level=15),
+            Hero(account_id=1, name=hero_names[1] if len(hero_names) > 1 else "Archer", level=20),
+            Hero(account_id=2, name=hero_names[2] if len(hero_names) > 2 else "Mage", level=12),
+            Hero(account_id=3, name=hero_names[3] if len(hero_names) > 3 else "Fire Mage", level=8),
         ]
         session.add_all(heroes)
         session.commit()
 
         # Create sample trait sets and traits
         trait_sets = [
-            HeroTraitSet(hero_id=1, slot=0),  # Aragorn's primary trait set
-            HeroTraitSet(hero_id=1, slot=1),  # Aragorn's secondary trait set
-            HeroTraitSet(hero_id=2, slot=0),  # Gandalf's trait set
-            HeroTraitSet(hero_id=3, slot=0),  # Legolas's trait set
+            HeroTraitSet(hero_id=1, slot=0),  # First hero's primary trait set
+            HeroTraitSet(hero_id=1, slot=1),  # First hero's secondary trait set
+            HeroTraitSet(hero_id=2, slot=0),  # Second hero's trait set
+            HeroTraitSet(hero_id=3, slot=0),  # Third hero's trait set
         ]
         session.add_all(trait_sets)
         session.commit()
 
-        # Create sample traits
+        # Create sample traits using trait IDs from config
+        try:
+            traits_config = load_config_file("src/config/herotraits.yaml")
+            trait_ids = list(traits_config.get("hero_traits", {}).keys())
+            trait_ids = [int(tid) for tid in trait_ids[:10]]  # Use first 10 trait IDs
+        except Exception:
+            trait_ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # Fallback trait IDs
+
         traits = [
-            # Aragorn's primary traits
-            HeroTrait(trait_set_id=1, slot=0, trait_id=101, trait_level=3),  # Leadership
-            HeroTrait(trait_set_id=1, slot=1, trait_id=102, trait_level=2),  # Sword Mastery
-            HeroTrait(trait_set_id=1, slot=2, trait_id=103, trait_level=1),  # Endurance
-            # Aragorn's secondary traits
-            HeroTrait(trait_set_id=2, slot=0, trait_id=201, trait_level=2),  # Stealth
-            HeroTrait(trait_set_id=2, slot=1, trait_id=202, trait_level=1),  # Tracking
-            # Gandalf's traits
-            HeroTrait(trait_set_id=3, slot=0, trait_id=301, trait_level=5),  # Magic Mastery
-            HeroTrait(trait_set_id=3, slot=1, trait_id=302, trait_level=3),  # Wisdom
-            HeroTrait(trait_set_id=3, slot=2, trait_id=303, trait_level=2),  # Fire Magic
-            # Legolas's traits
-            HeroTrait(trait_set_id=4, slot=0, trait_id=401, trait_level=4),  # Archery
-            HeroTrait(trait_set_id=4, slot=1, trait_id=402, trait_level=2),  # Agility
+            # First hero's primary traits
+            HeroTrait(trait_set_id=1, slot=0, trait_id=trait_ids[0], trait_level=3),
+            HeroTrait(trait_set_id=1, slot=1, trait_id=trait_ids[1], trait_level=2),
+            HeroTrait(trait_set_id=1, slot=2, trait_id=trait_ids[2], trait_level=1),
+            # First hero's secondary traits
+            HeroTrait(trait_set_id=2, slot=0, trait_id=trait_ids[3], trait_level=2),
+            HeroTrait(trait_set_id=2, slot=1, trait_id=trait_ids[4], trait_level=1),
+            # Second hero's traits
+            HeroTrait(trait_set_id=3, slot=0, trait_id=trait_ids[5], trait_level=5),
+            HeroTrait(trait_set_id=3, slot=1, trait_id=trait_ids[6], trait_level=3),
+            HeroTrait(trait_set_id=3, slot=2, trait_id=trait_ids[7], trait_level=2),
+            # Third hero's traits
+            HeroTrait(trait_set_id=4, slot=0, trait_id=trait_ids[8], trait_level=4),
+            HeroTrait(trait_set_id=4, slot=1, trait_id=trait_ids[9], trait_level=2),
         ]
         session.add_all(traits)
 
-        # Create sample account inventory items
+        # Create sample account inventory items with gacha tickets and resources
         account_items = [
-            AccountItem(account_id=1, item_id=1, amount=10),  # Player1: 10 Health Potions
-            AccountItem(account_id=1, item_id=2, amount=5),  # Player1: 5 Mana Potions
-            AccountItem(account_id=1, item_id=6, amount=1000),  # Player1: 1000 Gold Coins
-            AccountItem(account_id=2, item_id=1, amount=3),  # Player2: 3 Health Potions
-            AccountItem(account_id=2, item_id=7, amount=2),  # Player2: 2 Fire Scrolls
-            AccountItem(account_id=3, item_id=8, amount=1),  # TestUser: 1 Healing Crystal
+            # Player1: Well-established player with resources
+            AccountItem(account_id=1, item_id=1, amount=20),  # Standard Gacha Tickets
+            AccountItem(account_id=1, item_id=2, amount=5),  # Premium Gacha Tickets
+            AccountItem(account_id=1, item_id=3, amount=1),  # Rare Gacha Ticket
+            AccountItem(account_id=1, item_id=4, amount=50000),  # Gold Coins
+            AccountItem(account_id=1, item_id=5, amount=1000),  # Gems
+            AccountItem(account_id=1, item_id=51, amount=25),  # Health Potions
+            # Player2: Moderate player
+            AccountItem(account_id=2, item_id=1, amount=10),  # Standard Gacha Tickets
+            AccountItem(account_id=2, item_id=2, amount=2),  # Premium Gacha Tickets
+            AccountItem(account_id=2, item_id=4, amount=15000),  # Gold Coins
+            AccountItem(account_id=2, item_id=5, amount=250),  # Gems
+            AccountItem(account_id=2, item_id=51, amount=10),  # Health Potions
+            # NewPlayer: Starting resources
+            AccountItem(account_id=3, item_id=1, amount=5),  # Standard Gacha Tickets
+            AccountItem(account_id=3, item_id=4, amount=1000),  # Gold Coins
+            AccountItem(account_id=3, item_id=5, amount=100),  # Gems
+            AccountItem(account_id=3, item_id=51, amount=5),  # Health Potions
         ]
         session.add_all(account_items)
 
         # Create sample hero equipment
         hero_items = [
-            HeroItem(hero_id=1, item_id=3, amount=1),  # Aragorn: Iron Sword
-            HeroItem(hero_id=1, item_id=4, amount=1),  # Aragorn: Leather Armor
-            HeroItem(hero_id=2, item_id=5, amount=1),  # Gandalf: Magic Ring
-            HeroItem(hero_id=3, item_id=3, amount=1),  # Legolas: Iron Sword
+            HeroItem(hero_id=1, item_id=11, amount=1),  # First hero: Iron Sword
+            HeroItem(hero_id=1, item_id=31, amount=1),  # First hero: Leather Armor
+            HeroItem(hero_id=2, item_id=11, amount=1),  # Second hero: Iron Sword
+            HeroItem(hero_id=3, item_id=11, amount=1),  # Third hero: Iron Sword
         ]
         session.add_all(hero_items)
 
@@ -151,14 +224,24 @@ def verify_database():
         for item in inventory:
             print(f"  - {item['name']} (x{item['amount']})")
 
+    # Show total items in database
+    with Session(engine) as session:
+        total_items = session.query(Item).count()
+        print(f"\n✓ Total items in database: {total_items}")
+
 
 def main():
     """Main function to create and populate the database."""
-    print("=== Local Database Setup Script ===\n")
+    print("=== Enhanced Database Setup Script ===\n")
+    print("This script will create a comprehensive game database using")
+    print("configuration files for items, heroes, and traits.\n")
 
     try:
         # Create database schema
         create_database()
+
+        # Populate items from configuration
+        populate_items_from_config()
 
         # Populate with sample data
         populate_sample_data()
@@ -168,10 +251,16 @@ def main():
 
         print("\n=== Database Setup Complete! ===")
         print("Database file: game.db")
-        print("You can now use the AccountController for testing.")
+        print("✓ All items loaded from configuration")
+        print("✓ Sample accounts created with gacha tickets")
+        print("✓ Sample heroes with traits and equipment")
+        print("You can now use the GachaController and other controllers for testing.")
 
     except Exception as e:
         print(f"\n❌ Error during database setup: {e}")
+        import traceback
+
+        traceback.print_exc()
         sys.exit(1)
 
 

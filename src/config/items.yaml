@@ -1,0 +1,558 @@
+items:
+  # Gacha Tickets and Currency (1-10)
+  1:
+    id: 1
+    name: "Standard Gacha Ticket"
+    type: "Currency"
+    subtype: "Gacha"
+    description: "A basic ticket that allows you to summon common and rare heroes."
+    rarity: "Common"
+    stackable: true
+    max_stack: 999
+    value: 100
+    sources: ["Daily login", "Quest rewards", "Shop"]
+    uses: ["Standard gacha pulls"]
+
+  2:
+    id: 2
+    name: "Premium Gacha Ticket"
+    type: "Currency"
+    subtype: "Gacha"
+    description: "A premium ticket with higher chances of rare and epic heroes."
+    rarity: "Rare"
+    stackable: true
+    max_stack: 999
+    value: 500
+    sources: ["Events", "Premium shop", "Achievement rewards"]
+    uses: ["Premium gacha pulls", "Ten-pull guarantee"]
+
+  3:
+    id: 3
+    name: "Rare Gacha Ticket"
+    type: "Currency"
+    subtype: "Gacha"
+    description: "A special ticket that guarantees rare or better heroes."
+    rarity: "Epic"
+    stackable: true
+    max_stack: 999
+    value: 1000
+    sources: ["Special events", "Monthly rewards", "VIP shop"]
+    uses: ["Rare hero gacha", "Special events"]
+
+  4:
+    id: 4
+    name: "Gold Coins"
+    type: "Currency"
+    subtype: "Standard"
+    description: "The standard currency used throughout the realm."
+    rarity: "Common"
+    stackable: true
+    max_stack: 9999999
+    value: 1
+    sources: ["All activities", "Selling items", "Dungeons"]
+    uses: ["Shopping", "Upgrading", "Crafting"]
+
+  5:
+    id: 5
+    name: "Gems"
+    type: "Currency"
+    subtype: "Premium"
+    description: "Premium crystals with immense magical power."
+    rarity: "Rare"
+    stackable: true
+    max_stack: 999999
+    value: 10
+    sources: ["In-app purchases", "Special events", "High-tier content"]
+    uses: ["Premium purchases", "Instant upgrades", "Rare items"]
+
+  # Weapons (11-30)
+  11:
+    id: 11
+    name: "Iron Sword"
+    type: "Equipment"
+    subtype: "Weapon"
+    description: "A sturdy sword forged from quality iron."
+    rarity: "Common"
+    level_requirement: 1
+    stats:
+      attack: 25
+      durability: 100
+    enhancement_max: 10
+    value: 150
+    sources: ["Blacksmith", "Early dungeons", "Starter equipment"]
+
+  12:
+    id: 12
+    name: "Steel Blade"
+    type: "Equipment"
+    subtype: "Weapon"
+    description: "An improved sword made from refined steel."
+    rarity: "Rare"
+    level_requirement: 10
+    stats:
+      attack: 45
+      critical_chance: 5
+      durability: 150
+    enhancement_max: 15
+    value: 500
+    sources: ["Advanced blacksmith", "Mid-tier dungeons"]
+
+  13:
+    id: 13
+    name: "Mithril Rapier"
+    type: "Equipment"
+    subtype: "Weapon"
+    description: "A lightweight blade made from magical mithril."
+    rarity: "Epic"
+    level_requirement: 25
+    stats:
+      attack: 70
+      critical_chance: 15
+      speed: 10
+      durability: 200
+    enhancement_max: 20
+    value: 2000
+    sources: ["Epic dungeons", "Rare crafting", "Boss drops"]
+
+  14:
+    id: 14
+    name: "Dragon Slayer"
+    type: "Equipment"
+    subtype: "Weapon"
+    description: "A legendary sword specifically forged to slay dragons."
+    rarity: "Legendary"
+    level_requirement: 50
+    stats:
+      attack: 120
+      critical_chance: 25
+      dragon_damage: 50
+      durability: 300
+    enhancement_max: 25
+    special_abilities: ["Dragon Bane", "Fire Resistance"]
+    value: 10000
+    sources: ["Dragon lairs", "Legendary crafting", "Ultimate bosses"]
+
+  15:
+    id: 15
+    name: "Staff of Elements"
+    type: "Equipment"
+    subtype: "Weapon"
+    description: "A magical staff that channels elemental forces."
+    rarity: "Epic"
+    level_requirement: 20
+    stats:
+      magic_attack: 85
+      elemental_damage: 20
+      mana: 50
+      durability: 180
+    enhancement_max: 20
+    special_abilities: ["Elemental Mastery"]
+    value: 3000
+    sources: ["Mage towers", "Elemental dungeons", "Arcane crafting"]
+
+  # Armor (31-50)
+  31:
+    id: 31
+    name: "Leather Armor"
+    type: "Equipment"
+    subtype: "Armor"
+    description: "Basic protection made from treated leather."
+    rarity: "Common"
+    level_requirement: 1
+    stats:
+      defense: 15
+      durability: 80
+    enhancement_max: 10
+    value: 100
+    sources: ["Leather worker", "Basic dungeons", "Starter equipment"]
+
+  32:
+    id: 32
+    name: "Chain Mail"
+    type: "Equipment"
+    subtype: "Armor"
+    description: "Interlocking metal rings provide solid protection."
+    rarity: "Rare"
+    level_requirement: 8
+    stats:
+      defense: 35
+      magic_resistance: 10
+      durability: 120
+    enhancement_max: 15
+    value: 400
+    sources: ["Armorer", "Military dungeons"]
+
+  33:
+    id: 33
+    name: "Plate Armor"
+    type: "Equipment"
+    subtype: "Armor"
+    description: "Heavy armor plates offering maximum protection."
+    rarity: "Epic"
+    level_requirement: 22
+    stats:
+      defense: 60
+      health: 100
+      magic_resistance: 20
+      durability: 180
+    enhancement_max: 20
+    value: 1800
+    sources: ["Master armorer", "Fortress dungeons", "Knight orders"]
+
+  34:
+    id: 34
+    name: "Dragon Scale Armor"
+    type: "Equipment"
+    subtype: "Armor"
+    description: "Armor crafted from the scales of an ancient dragon."
+    rarity: "Legendary"
+    level_requirement: 45
+    stats:
+      defense: 100
+      health: 200
+      fire_resistance: 50
+      magic_resistance: 35
+      durability: 250
+    enhancement_max: 25
+    special_abilities: ["Dragon Protection", "Fire Immunity"]
+    value: 15000
+    sources: ["Dragon crafting", "Ancient vaults", "Dragon bosses"]
+
+  # Consumables (51-80)
+  51:
+    id: 51
+    name: "Health Potion"
+    type: "Consumable"
+    subtype: "Healing"
+    description: "Restores health when consumed."
+    rarity: "Common"
+    stackable: true
+    max_stack: 50
+    effects:
+      heal: 100
+    cooldown: 0
+    value: 25
+    sources: ["Alchemy", "Shop", "Drops"]
+
+  52:
+    id: 52
+    name: "Mana Potion"
+    type: "Consumable"
+    subtype: "Restoration"
+    description: "Restores mana when consumed."
+    rarity: "Common"
+    stackable: true
+    max_stack: 50
+    effects:
+      mana_restore: 50
+    cooldown: 0
+    value: 30
+    sources: ["Alchemy", "Shop", "Magic fountains"]
+
+  53:
+    id: 53
+    name: "Elixir of Strength"
+    type: "Consumable"
+    subtype: "Buff"
+    description: "Temporarily increases attack power."
+    rarity: "Rare"
+    stackable: true
+    max_stack: 20
+    effects:
+      attack_boost: 25
+      duration: 300  # seconds
+    cooldown: 10
+    value: 100
+    sources: ["Advanced alchemy", "Boss drops"]
+
+  54:
+    id: 54
+    name: "Phoenix Down"
+    type: "Consumable"
+    subtype: "Revival"
+    description: "Revives a fallen hero with partial health."
+    rarity: "Epic"
+    stackable: true
+    max_stack: 10
+    effects:
+      revive: true
+      heal_percent: 50
+    cooldown: 0
+    value: 500
+    sources: ["Phoenix encounters", "Legendary alchemy", "Premium shop"]
+
+  55:
+    id: 55
+    name: "Experience Crystal"
+    type: "Consumable"
+    subtype: "Enhancement"
+    description: "Grants experience points to heroes."
+    rarity: "Rare"
+    stackable: true
+    max_stack: 99
+    effects:
+      experience: 1000
+    cooldown: 0
+    value: 200
+    sources: ["Training grounds", "Victory rewards", "Crystal mines"]
+
+  # Crafting Materials (81-120)
+  81:
+    id: 81
+    name: "Iron Ore"
+    type: "Material"
+    subtype: "Metal"
+    description: "Raw iron ready for smelting and forging."
+    rarity: "Common"
+    stackable: true
+    max_stack: 999
+    value: 5
+    sources: ["Mining", "Resource dungeons", "Trading"]
+    uses: ["Weapon crafting", "Armor crafting", "Building"]
+
+  82:
+    id: 82
+    name: "Mithril Ore"
+    type: "Material"
+    subtype: "Metal"
+    description: "Rare magical metal with extraordinary properties."
+    rarity: "Epic"
+    stackable: true
+    max_stack: 99
+    value: 100
+    sources: ["Deep mining", "Magical veins", "Ancient ruins"]
+    uses: ["Legendary crafting", "Enchantments", "Magical items"]
+
+  83:
+    id: 83
+    name: "Dragon Scale"
+    type: "Material"
+    subtype: "Monster"
+    description: "A scale from an ancient dragon, incredibly durable."
+    rarity: "Legendary"
+    stackable: true
+    max_stack: 20
+    value: 1000
+    sources: ["Dragon encounters", "Ancient hoards", "Legendary hunts"]
+    uses: ["Dragon equipment", "Ultimate enchantments", "Artifact creation"]
+
+  84:
+    id: 84
+    name: "Magic Crystal"
+    type: "Material"
+    subtype: "Magical"
+    description: "A crystal infused with pure magical energy."
+    rarity: "Rare"
+    stackable: true
+    max_stack: 99
+    value: 50
+    sources: ["Magic dungeons", "Ley lines", "Wizard towers"]
+    uses: ["Spell crafting", "Enchantments", "Magical research"]
+
+  85:
+    id: 85
+    name: "Phoenix Feather"
+    type: "Material"
+    subtype: "Magical"
+    description: "A feather from the immortal phoenix, radiating warmth."
+    rarity: "Legendary"
+    stackable: true
+    max_stack: 10
+    value: 2000
+    sources: ["Phoenix encounters", "Sacred flames", "Divine quests"]
+    uses: ["Resurrection items", "Fire enchantments", "Divine crafting"]
+
+  # Enhancement Materials (121-150)
+  121:
+    id: 121
+    name: "Enhancement Stone"
+    type: "Enhancement"
+    subtype: "Basic"
+    description: "Basic stone used to enhance equipment."
+    rarity: "Common"
+    stackable: true
+    max_stack: 999
+    value: 10
+    sources: ["Mining", "Dungeons", "Shop"]
+    uses: ["Equipment enhancement", "Weapon upgrading"]
+
+  122:
+    id: 122
+    name: "Enchantment Scroll"
+    type: "Enhancement"
+    subtype: "Magic"
+    description: "A scroll containing magical enhancement formulas."
+    rarity: "Rare"
+    stackable: true
+    max_stack: 50
+    value: 150
+    sources: ["Scribes", "Magic libraries", "Wizard drops"]
+    uses: ["Magical enhancement", "Spell inscription"]
+
+  123:
+    id: 123
+    name: "Awakening Crystal"
+    type: "Enhancement"
+    subtype: "Special"
+    description: "Rare crystal used to awaken dormant hero abilities."
+    rarity: "Epic"
+    stackable: true
+    max_stack: 20
+    value: 500
+    sources: ["Epic bosses", "Special events", "Crystal caves"]
+    uses: ["Hero awakening", "Skill enhancement", "Limit breaking"]
+
+  # Special Event Items (151-200)
+  151:
+    id: 151
+    name: "Event Token"
+    type: "Special"
+    subtype: "Event"
+    description: "A special token obtained during limited events."
+    rarity: "Special"
+    stackable: true
+    max_stack: 999
+    value: 0  # Event-specific value
+    sources: ["Special events", "Event quests", "Event rewards"]
+    uses: ["Event shop", "Special exchanges", "Limited rewards"]
+
+  152:
+    id: 152
+    name: "Anniversary Coin"
+    type: "Special"
+    subtype: "Commemorative"
+    description: "A commemorative coin celebrating the game's anniversary."
+    rarity: "Legendary"
+    stackable: true
+    max_stack: 999
+    value: 0
+    sources: ["Anniversary events", "Login bonuses", "Special quests"]
+    uses: ["Anniversary shop", "Exclusive items", "Collector rewards"]
+
+  153:
+    id: 153
+    name: "Lucky Charm"
+    type: "Special"
+    subtype: "Buff"
+    description: "Increases luck and drop rates for a limited time."
+    rarity: "Rare"
+    stackable: true
+    max_stack: 20
+    effects:
+      luck_boost: 25
+      drop_rate_boost: 15
+      duration: 3600  # 1 hour
+    value: 300
+    sources: ["Events", "Premium shop", "Lucky draws"]
+
+# Item Categories
+item_categories:
+  by_type:
+    Currency: [1, 2, 3, 4, 5]
+    Equipment: [11, 12, 13, 14, 15, 31, 32, 33, 34]
+    Consumable: [51, 52, 53, 54, 55]
+    Material: [81, 82, 83, 84, 85]
+    Enhancement: [121, 122, 123]
+    Special: [151, 152, 153]
+
+  by_rarity:
+    Common: [1, 4, 11, 31, 51, 52, 81, 121]
+    Rare: [2, 5, 12, 32, 53, 55, 84, 122, 153]
+    Epic: [3, 13, 15, 33, 54, 82, 123]
+    Legendary: [14, 34, 83, 85, 152]
+    Special: [151]
+
+  by_subtype:
+    Gacha: [1, 2, 3]
+    Standard: [4]
+    Premium: [5]
+    Weapon: [11, 12, 13, 14, 15]
+    Armor: [31, 32, 33, 34]
+    Healing: [51]
+    Restoration: [52]
+    Buff: [53, 153]
+    Revival: [54]
+    Enhancement: [55, 121, 122, 123]
+    Metal: [81, 82]
+    Monster: [83]
+    Magical: [84, 85]
+    Event: [151]
+    Commemorative: [152]
+
+# Item Sets and Collections
+item_sets:
+  iron_set:
+    name: "Iron Warrior Set"
+    items: [11, 31]  # Iron Sword + Leather Armor
+    set_bonus:
+      2_pieces: "Physical damage +10%"
+    description: "Basic equipment for new warriors"
+
+  steel_set:
+    name: "Steel Guardian Set"
+    items: [12, 32]  # Steel Blade + Chain Mail
+    set_bonus:
+      2_pieces: "Defense +15%, Critical chance +5%"
+    description: "Reliable equipment for experienced fighters"
+
+  mithril_set:
+    name: "Mithril Elite Set"
+    items: [13, 15]  # Mithril Rapier + Staff of Elements
+    set_bonus:
+      2_pieces: "All damage +20%, Mana efficiency +15%"
+    description: "Elite equipment for versatile heroes"
+
+  dragon_set:
+    name: "Dragon Lord Set"
+    items: [14, 34]  # Dragon Slayer + Dragon Scale Armor
+    set_bonus:
+      2_pieces: "All stats +25%, Dragon immunity, Fire mastery"
+    description: "Legendary equipment forged from dragon materials"
+
+# Crafting Recipes
+crafting_recipes:
+  steel_blade:
+    result_item: 12
+    materials:
+      iron_ore: 5
+      magic_crystal: 2
+      enhancement_stone: 3
+    gold_cost: 200
+    success_rate: 85
+
+  mithril_rapier:
+    result_item: 13
+    materials:
+      mithril_ore: 3
+      magic_crystal: 5
+      enchantment_scroll: 2
+    gold_cost: 1000
+    success_rate: 60
+
+  dragon_slayer:
+    result_item: 14
+    materials:
+      dragon_scale: 5
+      mithril_ore: 10
+      phoenix_feather: 3
+      awakening_crystal: 5
+    gold_cost: 5000
+    success_rate: 25
+
+# Shop Categories
+shop_categories:
+  basic_shop:
+    available_items: [1, 4, 11, 31, 51, 52, 81, 121]
+    currency: "gold_coins"
+    description: "Basic items available to all players"
+
+  premium_shop:
+    available_items: [2, 3, 5, 54, 123, 153]
+    currency: "gems"
+    description: "Premium items for advanced players"
+
+  event_shop:
+    available_items: [151, 152]
+    currency: "event_token"
+    description: "Special items during events"
+    availability: "limited_time" 
