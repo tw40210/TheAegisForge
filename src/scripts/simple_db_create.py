@@ -39,41 +39,20 @@ def populate_items_from_config():
     """Populate items table from items.yaml configuration."""
     print("\nLoading items from configuration...")
 
-    try:
-        items_config = load_config_file("src/config/items.yaml")
+    items_config = load_config_file("src/config/items.yaml")
 
-        with Session(engine) as session:
-            items_data = items_config.get("items", {})
-            items_to_add = []
+    with Session(engine) as session:
+        items_data = items_config.get("items", {})
+        items_to_add = []
 
-            for item_data in items_data.values():
-                item = Item(id=item_data["id"], name=item_data["name"])
-                items_to_add.append(item)
+        for item_data in items_data.values():
+            item = Item(id=item_data["id"], name=item_data["name"])
+            items_to_add.append(item)
 
-            session.add_all(items_to_add)
-            session.commit()
+        session.add_all(items_to_add)
+        session.commit()
 
-            print(f"✓ Added {len(items_to_add)} items from configuration")
-
-    except Exception as e:
-        print(f"⚠️  Warning: Could not load items config: {e}")
-        print("   Creating basic sample items instead...")
-
-        # Fallback to basic items if config loading fails
-        with Session(engine) as session:
-            items = [
-                Item(id=1, name="Standard Gacha Ticket"),
-                Item(id=2, name="Premium Gacha Ticket"),
-                Item(id=3, name="Rare Gacha Ticket"),
-                Item(id=4, name="Gold Coins"),
-                Item(id=5, name="Gems"),
-                Item(id=11, name="Iron Sword"),
-                Item(id=31, name="Leather Armor"),
-                Item(id=51, name="Health Potion"),
-            ]
-            session.add_all(items)
-            session.commit()
-            print("✓ Created basic sample items")
+        print(f"✓ Added {len(items_to_add)} items from configuration")
 
 
 def populate_sample_data():
@@ -106,20 +85,17 @@ def populate_sample_data():
         session.commit()
 
         # Create sample heroes using names from the hero config
-        try:
-            heroes_config = load_config_file("src/config/heroes.yaml")
-            hero_data = heroes_config.get("heroes", {})
-            hero_names = [
-                hero_info.get("name", f"Hero {hero_id}") for hero_id, hero_info in hero_data.items()
-            ]
-        except Exception:
-            hero_names = ["Knight", "Archer", "Mage", "Fire Mage"]
+        heroes_config = load_config_file("src/config/heroes.yaml")
+        hero_data = heroes_config.get("heroes", {})
+        hero_names = [
+            hero_info.get("name", f"Hero {hero_id}") for hero_id, hero_info in hero_data.items()
+        ]
 
         heroes = [
-            Hero(account_id=1, name=hero_names[0] if len(hero_names) > 0 else "Knight", level=15),
-            Hero(account_id=1, name=hero_names[1] if len(hero_names) > 1 else "Archer", level=20),
-            Hero(account_id=2, name=hero_names[2] if len(hero_names) > 2 else "Mage", level=12),
-            Hero(account_id=3, name=hero_names[3] if len(hero_names) > 3 else "Fire Mage", level=8),
+            Hero(account_id=1, name=hero_names[0], level=15),
+            Hero(account_id=1, name=hero_names[1], level=20),
+            Hero(account_id=2, name=hero_names[2], level=12),
+            Hero(account_id=3, name=hero_names[3], level=8),
         ]
         session.add_all(heroes)
         session.commit()
@@ -135,12 +111,9 @@ def populate_sample_data():
         session.commit()
 
         # Create sample traits using trait IDs from config
-        try:
-            traits_config = load_config_file("src/config/herotraits.yaml")
-            trait_ids = list(traits_config.get("hero_traits", {}).keys())
-            trait_ids = [int(tid) for tid in trait_ids[:10]]  # Use first 10 trait IDs
-        except Exception:
-            trait_ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # Fallback trait IDs
+        traits_config = load_config_file("src/config/herotraits.yaml")
+        trait_ids = list(traits_config.get("hero_traits", {}).keys())
+        trait_ids = [int(tid) for tid in trait_ids[:10]]  # Use first 10 trait IDs
 
         traits = [
             # First hero's primary traits
