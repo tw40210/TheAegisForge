@@ -7,6 +7,5 @@ A game aiming to wisen players
 
 
 # TODO
-1. Item distribution
-2. Gacha
+1.email as account
 3. Material progress logging

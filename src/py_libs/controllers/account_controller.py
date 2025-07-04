@@ -4,10 +4,17 @@ from __future__ import annotations
 
 from typing import Any
 
+from firebase_admin import auth
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from src.py_libs.controllers.sql_db_controller import Account, engine
+
+
+class InvalidTokenError(Exception):
+    """Raised when an invalid ID token is provided."""
+
+    pass
 
 
 class AccountController:
@@ -20,6 +27,7 @@ class AccountController:
     def create_account(
         self,
         name: str,
+        id_token: str,
         stories: list[dict[str, Any]] = None,
         status: str = None,
         party_sets: list[dict[str, Any]] = None,
@@ -28,23 +36,46 @@ class AccountController:
 
         Args:
             name: The account name (must be unique)
+            id_token: Firebase ID token to decode for user information
             stories: Optional list of story data
             status: Optional account status
             party_sets: Optional list of party set data
 
         Returns:
             Dictionary with account data if successful, None if creation fails
+
+        Raises:
+            InvalidTokenError: If the provided ID token is invalid
         """
+        # Decode the Firebase ID token
+        try:
+            decoded = auth.verify_id_token(id_token)
+        except Exception as e:
+            raise InvalidTokenError("Invalid ID token") from e
+
+        uid = decoded["uid"]
+        email = decoded.get("email")
+        user_name = decoded.get("name")
+
         try:
             with Session(self.engine) as session:
                 account = Account(
-                    name=name, stories=stories or [], status=status, party_sets=party_sets or []
+                    name=name,
+                    firebaseUID=uid,
+                    email=email,
+                    user_name=user_name,
+                    stories=stories or [],
+                    status=status,
+                    party_sets=party_sets or [],
                 )
                 session.add(account)
                 session.commit()
                 return {
                     "id": account.id,
                     "name": account.name,
+                    "firebaseUID": account.firebaseUID,
+                    "email": account.email,
+                    "user_name": account.user_name,
                     "stories": account.stories,
                     "status": account.status,
                     "party_sets": account.party_sets,
@@ -68,6 +99,9 @@ class AccountController:
             return {
                 "id": account.id,
                 "name": account.name,
+                "firebaseUID": account.firebaseUID,
+                "email": account.email,
+                "user_name": account.user_name,
                 "stories": account.stories,
                 "status": account.status,
                 "party_sets": account.party_sets,
@@ -89,6 +123,33 @@ class AccountController:
             return {
                 "id": account.id,
                 "name": account.name,
+                "firebaseUID": account.firebaseUID,
+                "email": account.email,
+                "user_name": account.user_name,
+                "stories": account.stories,
+                "status": account.status,
+                "party_sets": account.party_sets,
+            }
+
+    def get_account_by_firebase_uid(self, firebase_uid: str) -> dict[str, Any] | None:
+        """Retrieve an account by its Firebase UID.
+
+        Args:
+            firebase_uid: The Firebase UID of the account to retrieve
+
+        Returns:
+            Dictionary with account data if found, None otherwise
+        """
+        with Session(self.engine) as session:
+            account = session.query(Account).filter(Account.firebaseUID == firebase_uid).first()
+            if not account:
+                return None
+            return {
+                "id": account.id,
+                "name": account.name,
+                "firebaseUID": account.firebaseUID,
+                "email": account.email,
+                "user_name": account.user_name,
                 "stories": account.stories,
                 "status": account.status,
                 "party_sets": account.party_sets,
@@ -149,6 +210,9 @@ class AccountController:
                 {
                     "id": account.id,
                     "name": account.name,
+                    "firebaseUID": account.firebaseUID,
+                    "email": account.email,
+                    "user_name": account.user_name,
                     "stories": account.stories,
                     "status": account.status,
                     "party_sets": account.party_sets,

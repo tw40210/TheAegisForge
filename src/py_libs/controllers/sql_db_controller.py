@@ -37,6 +37,9 @@ class Account(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    firebaseUID: Mapped[str | None] = mapped_column(String(128), unique=True)
+    email: Mapped[str | None] = mapped_column(String(255), unique=True)
+    user_name: Mapped[str | None] = mapped_column(String(64))
     stories: Mapped[list | None] = mapped_column(JSON, default=list)  # flexible JSON payload
     status: Mapped[str | None] = mapped_column(String(32))
     party_sets: Mapped[list | None] = mapped_column(JSON, default=list)
