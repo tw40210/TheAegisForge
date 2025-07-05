@@ -45,10 +45,9 @@ def account_controller(engine):
 def sample_account_data():
     """Sample account data for testing."""
     return {
-        "name": "test_player",
-        "stories": [{"story_id": 1, "progress": 50}],
-        "status": "active",
-        "party_sets": [{"party_id": 1, "name": "Main Party"}],
+        "stories": [],
+        "status": None,
+        "party_sets": [],
     }
 
 
@@ -89,21 +88,17 @@ def test_create_account(
     mock_verify_token.return_value = mock_decoded_token
 
     account = account_controller.create_account(
-        name=sample_account_data["name"],
         id_token=mock_firebase_token,
-        stories=sample_account_data["stories"],
-        status=sample_account_data["status"],
-        party_sets=sample_account_data["party_sets"],
     )
 
     assert account is not None
-    assert account["name"] == sample_account_data["name"]
+    assert account["name"] == mock_decoded_token["name"]  # Name comes from Firebase token
     assert account["firebaseUID"] == mock_decoded_token["uid"]
     assert account["email"] == mock_decoded_token["email"]
     assert account["user_name"] == mock_decoded_token["name"]
-    assert account["stories"] == sample_account_data["stories"]
-    assert account["status"] == sample_account_data["status"]
-    assert account["party_sets"] == sample_account_data["party_sets"]
+    assert account["stories"] == []
+    assert account["status"] is None
+    assert account["party_sets"] == []
 
     # Verify Firebase token was called
     mock_verify_token.assert_called_once_with(mock_firebase_token)
@@ -118,9 +113,7 @@ def test_create_account_invalid_token(
     mock_verify_token.side_effect = Exception("Invalid token")
 
     with pytest.raises(InvalidTokenError):
-        account_controller.create_account(
-            name=sample_account_data["name"], id_token=mock_firebase_token
-        )
+        account_controller.create_account(id_token=mock_firebase_token)
 
 
 @patch("src.py_libs.controllers.account_controller.auth.verify_id_token")
@@ -135,13 +128,34 @@ def test_create_account_missing_optional_fields(
     }
     mock_verify_token.return_value = mock_decoded_token
 
-    account = account_controller.create_account(
-        name=sample_account_data["name"], id_token=mock_firebase_token
-    )
+    account = account_controller.create_account(id_token=mock_firebase_token)
 
     assert account is not None
+    assert account["name"] == mock_decoded_token["uid"]  # Falls back to UID
     assert account["firebaseUID"] == mock_decoded_token["uid"]
     assert account["email"] is None
+    assert account["user_name"] is None
+
+
+@patch("src.py_libs.controllers.account_controller.auth.verify_id_token")
+def test_create_account_name_fallback_to_email(
+    mock_verify_token, account_controller, sample_account_data, mock_firebase_token
+):
+    """Test account creation when name is missing but email is available."""
+    # Mock Firebase token with email but no name
+    mock_decoded_token = {
+        "uid": "firebase_uid_123",
+        "email": "test@example.com",
+        # name is missing
+    }
+    mock_verify_token.return_value = mock_decoded_token
+
+    account = account_controller.create_account(id_token=mock_firebase_token)
+
+    assert account is not None
+    assert account["name"] == mock_decoded_token["email"]  # Falls back to email
+    assert account["firebaseUID"] == mock_decoded_token["uid"]
+    assert account["email"] == mock_decoded_token["email"]
     assert account["user_name"] is None
 
 
@@ -153,19 +167,15 @@ def test_create_duplicate_account(
     mock_firebase_token,
     mock_decoded_token,
 ):
-    """Test creating account with duplicate name."""
+    """Test creating account with duplicate Firebase UID."""
     # Mock Firebase token verification
     mock_verify_token.return_value = mock_decoded_token
 
     # Create first account
-    account_controller.create_account(
-        name=sample_account_data["name"], id_token=mock_firebase_token
-    )
+    account_controller.create_account(id_token=mock_firebase_token)
 
-    # Try to create duplicate account
-    duplicate_account = account_controller.create_account(
-        name=sample_account_data["name"], id_token=mock_firebase_token
-    )
+    # Try to create duplicate account with same Firebase UID
+    duplicate_account = account_controller.create_account(id_token=mock_firebase_token)
     assert duplicate_account is None
 
 
@@ -181,14 +191,12 @@ def test_get_account(
     # Mock Firebase token verification
     mock_verify_token.return_value = mock_decoded_token
 
-    created_account = account_controller.create_account(
-        name=sample_account_data["name"], id_token=mock_firebase_token
-    )
+    created_account = account_controller.create_account(id_token=mock_firebase_token)
     retrieved_account = account_controller.get_account(created_account["id"])
 
     assert retrieved_account is not None
     assert retrieved_account["id"] == created_account["id"]
-    assert retrieved_account["name"] == sample_account_data["name"]
+    assert retrieved_account["name"] == mock_decoded_token["name"]
     assert retrieved_account["firebaseUID"] == mock_decoded_token["uid"]
     assert retrieved_account["email"] == mock_decoded_token["email"]
     assert retrieved_account["user_name"] == mock_decoded_token["name"]
@@ -206,14 +214,12 @@ def test_get_account_by_name(
     # Mock Firebase token verification
     mock_verify_token.return_value = mock_decoded_token
 
-    created_account = account_controller.create_account(
-        name=sample_account_data["name"], id_token=mock_firebase_token
-    )
-    retrieved_account = account_controller.get_account_by_name(sample_account_data["name"])
+    created_account = account_controller.create_account(id_token=mock_firebase_token)
+    retrieved_account = account_controller.get_account_by_name(mock_decoded_token["name"])
 
     assert retrieved_account is not None
     assert retrieved_account["id"] == created_account["id"]
-    assert retrieved_account["name"] == sample_account_data["name"]
+    assert retrieved_account["name"] == mock_decoded_token["name"]
     assert retrieved_account["firebaseUID"] == mock_decoded_token["uid"]
     assert retrieved_account["email"] == mock_decoded_token["email"]
     assert retrieved_account["user_name"] == mock_decoded_token["name"]
@@ -231,9 +237,7 @@ def test_update_account(
     # Mock Firebase token verification
     mock_verify_token.return_value = mock_decoded_token
 
-    account = account_controller.create_account(
-        name=sample_account_data["name"], id_token=mock_firebase_token
-    )
+    account = account_controller.create_account(id_token=mock_firebase_token)
 
     # Update account
     new_status = "inactive"
@@ -267,9 +271,7 @@ def test_delete_account(
     # Mock Firebase token verification
     mock_verify_token.return_value = mock_decoded_token
 
-    account = account_controller.create_account(
-        name=sample_account_data["name"], id_token=mock_firebase_token
-    )
+    account = account_controller.create_account(id_token=mock_firebase_token)
 
     # Delete account
     success = account_controller.delete_account(account["id"])
@@ -293,9 +295,7 @@ def test_list_accounts(
     mock_verify_token.return_value = mock_decoded_token
 
     # Create multiple accounts
-    account1 = account_controller.create_account(
-        name=sample_account_data["name"], id_token=mock_firebase_token
-    )
+    account1 = account_controller.create_account(id_token=mock_firebase_token)
 
     # Create second account with different mock data
     mock_decoded_token2 = {
@@ -305,9 +305,7 @@ def test_list_accounts(
     }
     mock_verify_token.return_value = mock_decoded_token2
 
-    account2 = account_controller.create_account(
-        name="test_player2", id_token=mock_firebase_token, status="active"
-    )
+    account2 = account_controller.create_account(id_token=mock_firebase_token)
 
     accounts = account_controller.list_accounts()
     assert len(accounts) == 2
@@ -340,13 +338,13 @@ def test_get_account_heroes(
     # Create account and hero
     with Session(account_controller.engine) as session:
         account = Account(
-            name=sample_account_data["name"],
+            name=mock_decoded_token["name"],
             firebaseUID=mock_decoded_token["uid"],
             email=mock_decoded_token["email"],
             user_name=mock_decoded_token["name"],
-            stories=sample_account_data["stories"],
-            status=sample_account_data["status"],
-            party_sets=sample_account_data["party_sets"],
+            stories=[],
+            status=None,
+            party_sets=[],
         )
         session.add(account)
         session.commit()
@@ -393,13 +391,13 @@ def test_get_account_inventory(
     # Create account and item
     with Session(account_controller.engine) as session:
         account = Account(
-            name=sample_account_data["name"],
+            name=mock_decoded_token["name"],
             firebaseUID=mock_decoded_token["uid"],
             email=mock_decoded_token["email"],
             user_name=mock_decoded_token["name"],
-            stories=sample_account_data["stories"],
-            status=sample_account_data["status"],
-            party_sets=sample_account_data["party_sets"],
+            stories=[],
+            status=None,
+            party_sets=[],
         )
         session.add(account)
         session.commit()
@@ -454,9 +452,7 @@ def test_get_account_by_firebase_uid(
     mock_verify_token.return_value = mock_decoded_token
 
     # Create account
-    created_account = account_controller.create_account(
-        name=sample_account_data["name"], id_token=mock_firebase_token
-    )
+    created_account = account_controller.create_account(id_token=mock_firebase_token)
 
     # Retrieve by Firebase UID
     retrieved_account = account_controller.get_account_by_firebase_uid(mock_decoded_token["uid"])
@@ -481,14 +477,12 @@ def test_create_account_duplicate_firebase_uid(
     mock_verify_token.return_value = mock_decoded_token
 
     # Create first account
-    account1 = account_controller.create_account(name="test_player1", id_token=mock_firebase_token)
-    assert account1 is not None
+    first_account = account_controller.create_account(id_token=mock_firebase_token)
 
-    # Try to create second account with same Firebase UID but different name
-    duplicate_account = account_controller.create_account(
-        name="test_player2", id_token=mock_firebase_token
-    )
-    # Should fail due to unique constraint on firebaseUID
+    # Try to create second account with same Firebase UID
+    duplicate_account = account_controller.create_account(id_token=mock_firebase_token)
+
+    assert first_account is not None
     assert duplicate_account is None
 
 

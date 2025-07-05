@@ -26,20 +26,12 @@ class AccountController:
 
     def create_account(
         self,
-        name: str,
         id_token: str,
-        stories: list[dict[str, Any]] = None,
-        status: str = None,
-        party_sets: list[dict[str, Any]] = None,
     ) -> dict[str, Any] | None:
         """Create a new account in the database.
 
         Args:
-            name: The account name (must be unique)
             id_token: Firebase ID token to decode for user information
-            stories: Optional list of story data
-            status: Optional account status
-            party_sets: Optional list of party set data
 
         Returns:
             Dictionary with account data if successful, None if creation fails
@@ -57,16 +49,20 @@ class AccountController:
         email = decoded.get("email")
         user_name = decoded.get("name")
 
+        # Use user_name from Firebase token as the account name
+        # If no name is available, fall back to email or UID
+        account_name = user_name or email or uid
+
         try:
             with Session(self.engine) as session:
                 account = Account(
-                    name=name,
+                    name=account_name,
                     firebaseUID=uid,
                     email=email,
                     user_name=user_name,
-                    stories=stories or [],
-                    status=status,
-                    party_sets=party_sets or [],
+                    stories=[],
+                    status=None,
+                    party_sets=[],
                 )
                 session.add(account)
                 session.commit()

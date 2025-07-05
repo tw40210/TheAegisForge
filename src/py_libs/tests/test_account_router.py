@@ -39,13 +39,13 @@ def sample_account_data():
     """Sample account data for testing."""
     return {
         "id": 1,
-        "name": "test_player",
+        "name": "Test User",
         "firebaseUID": "firebase_uid_123",
         "email": "test@example.com",
         "user_name": "Test User",
-        "stories": [{"story_id": 1, "progress": 50}],
-        "status": "active",
-        "party_sets": [{"party_id": 1, "name": "Main Party"}],
+        "stories": [],
+        "status": None,
+        "party_sets": [],
     }
 
 
@@ -53,11 +53,7 @@ def sample_account_data():
 def create_account_request():
     """Sample create account request data."""
     return {
-        "name": "test_player",
         "id_token": "mock_firebase_token",
-        "stories": [{"story_id": 1, "progress": 50}],
-        "status": "active",
-        "party_sets": [{"party_id": 1, "name": "Main Party"}],
     }
 
 
@@ -100,11 +96,7 @@ class TestCreateAccount:
 
         # Verify controller was called correctly
         mock_account_controller.create_account.assert_called_once_with(
-            name=create_account_request["name"],
             id_token=create_account_request["id_token"],
-            stories=create_account_request["stories"],
-            status=create_account_request["status"],
-            party_sets=create_account_request["party_sets"],
         )
 
     @patch("src.routers.account_router.AccountController")
@@ -139,9 +131,9 @@ class TestCreateAccount:
         response = await client.post("/account/create", json=create_account_request)
 
         # Assertions
-        assert response.status_code == 500  # Changed from 400 to 500 based on actual behavior
+        assert response.status_code == 400
         data = response.json()
-        assert data["detail"] == "Internal server error"
+        assert data["detail"] == "Account creation failed. Name might already exist."
 
     @patch("src.routers.account_router.AccountController")
     @pytest.mark.asyncio
@@ -164,8 +156,8 @@ class TestCreateAccount:
     @pytest.mark.asyncio
     async def test_create_account_missing_required_fields(self, client):
         """Test account creation with missing required fields."""
-        # Request without required 'name' field
-        invalid_request = {"id_token": "mock_firebase_token", "stories": []}
+        # Request without required 'id_token' field
+        invalid_request = {"some_field": "value"}
 
         response = await client.post("/account/create", json=invalid_request)
 
@@ -178,11 +170,11 @@ class TestCreateAccount:
     @pytest.mark.asyncio
     async def test_create_account_minimal_request(self, mock_controller_class, client):
         """Test account creation with minimal required fields."""
-        minimal_request = {"name": "test_player", "id_token": "mock_firebase_token"}
+        minimal_request = {"id_token": "mock_firebase_token"}
 
         sample_response = {
             "id": 1,
-            "name": "test_player",
+            "name": "Test User",
             "firebaseUID": "firebase_uid_123",
             "email": "test@example.com",
             "user_name": "Test User",
@@ -201,16 +193,7 @@ class TestCreateAccount:
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
-        assert data["data"]["name"] == "test_player"
-
-        # Verify controller was called with None for optional fields
-        mock_controller.create_account.assert_called_once_with(
-            name="test_player",
-            id_token="mock_firebase_token",
-            stories=None,
-            status=None,
-            party_sets=None,
-        )
+        assert data["data"]["name"] == sample_response["name"]
 
 
 class TestGetAccountInfo:
@@ -303,7 +286,9 @@ class TestGetAccountInfo:
         response = await client.get("/account/info")
 
         # Assertions
-        assert response.status_code == 422  # Validation error for missing header
+        assert response.status_code == 401  # Unauthorized for missing header
+        data = response.json()
+        assert data["detail"] == "Authorization header is required"
 
     @pytest.mark.asyncio
     async def test_get_account_info_malformed_authorization_header(self, client):

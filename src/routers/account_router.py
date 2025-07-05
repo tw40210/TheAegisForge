@@ -1,7 +1,6 @@
 import logging
-from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from firebase_admin import auth
 from pydantic import BaseModel
 
@@ -20,11 +19,7 @@ router = APIRouter(prefix="/account")
 class CreateAccountRequest(BaseModel):
     """Request model for creating an account."""
 
-    name: str
     id_token: str
-    stories: list[dict[str, Any]] | None = None
-    status: str | None = None
-    party_sets: list[dict[str, Any]] | None = None
 
 
 @router.post("/create")
@@ -32,7 +27,7 @@ async def create_account(request: CreateAccountRequest):
     """Create a new account using Firebase ID token.
 
     Args:
-        request: CreateAccountRequest containing name, id_token, and optional fields
+        request: CreateAccountRequest containing id_token
 
     Returns:
         Dictionary with created account data
@@ -44,11 +39,7 @@ async def create_account(request: CreateAccountRequest):
         controller = AccountController()
 
         account_data = controller.create_account(
-            name=request.name,
             id_token=request.id_token,
-            stories=request.stories,
-            status=request.status,
-            party_sets=request.party_sets,
         )
 
         if account_data is None:
@@ -62,13 +53,15 @@ async def create_account(request: CreateAccountRequest):
     except InvalidTokenError as e:
         logger.error(f"Invalid Firebase token: {e}")
         raise HTTPException(status_code=401, detail="Invalid Firebase ID token")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error creating account: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/info")
-async def get_account_info(authorization: str):
+async def get_account_info(authorization: str = None):
     """Get account information using Firebase ID token.
 
     Args:
@@ -80,7 +73,14 @@ async def get_account_info(authorization: str):
     Raises:
         HTTPException: If token is invalid or account not found
     """
+
+    if authorization is None:
+        authorization = Header(None)
     try:
+        # Check if authorization header is present
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization header is required")
+
         # Extract token from Authorization header (expecting "Bearer <token>")
         if not authorization.startswith("Bearer "):
             raise HTTPException(

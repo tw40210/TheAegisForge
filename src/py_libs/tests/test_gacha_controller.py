@@ -42,9 +42,9 @@ def sample_gacha_pools():
                 "requiring_item_id": 1,
                 "num_requiring_item": 1,
                 "heroes": [
-                    {"hero_name": "Common Hero", "probability": 0.6},
-                    {"hero_name": "Rare Hero", "probability": 0.3},
-                    {"hero_name": "Legendary Hero", "probability": 0.1},
+                    {"hero_id": 1, "probability": 0.6},
+                    {"hero_id": 2, "probability": 0.3},
+                    {"hero_id": 3, "probability": 0.1},
                 ],
             },
             "premium_test_pool": {
@@ -53,9 +53,9 @@ def sample_gacha_pools():
                 "requiring_item_id": 2,
                 "num_requiring_item": 1,
                 "heroes": [
-                    {"hero_name": "Epic Hero", "probability": 0.5},
-                    {"hero_name": "Mythic Hero", "probability": 0.3},
-                    {"hero_name": "Divine Hero", "probability": 0.2},
+                    {"hero_id": 4, "probability": 0.5},
+                    {"hero_id": 5, "probability": 0.3},
+                    {"hero_id": 6, "probability": 0.2},
                 ],
             },
             "ten_pull_pool": {
@@ -64,8 +64,8 @@ def sample_gacha_pools():
                 "requiring_item_id": 2,
                 "num_requiring_item": 10,
                 "heroes": [
-                    {"hero_name": "Guaranteed Rare", "probability": 0.7},
-                    {"hero_name": "Guaranteed Epic", "probability": 0.3},
+                    {"hero_id": 7, "probability": 0.7},
+                    {"hero_id": 8, "probability": 0.3},
                 ],
             },
             "empty_pool": {
@@ -75,6 +75,23 @@ def sample_gacha_pools():
                 "num_requiring_item": 1,
                 "heroes": [],
             },
+        }
+    }
+
+
+@pytest.fixture
+def sample_heroes_config():
+    """Sample heroes configuration for testing."""
+    return {
+        "heroes": {
+            "1": {"name": "Common Hero"},
+            "2": {"name": "Rare Hero"},
+            "3": {"name": "Legendary Hero"},
+            "4": {"name": "Epic Hero"},
+            "5": {"name": "Mythic Hero"},
+            "6": {"name": "Divine Hero"},
+            "7": {"name": "Guaranteed Rare"},
+            "8": {"name": "Guaranteed Epic"},
         }
     }
 
@@ -94,7 +111,7 @@ def temp_config_file(sample_gacha_pools):
 
 
 @pytest.fixture
-def gacha_controller(engine, temp_config_file):
+def gacha_controller(engine, temp_config_file, sample_heroes_config):
     """Create a GachaController instance with test database and config."""
     with patch("src.py_libs.controllers.gacha_controller.Path") as mock_path:
         # Mock the config file path to use our temporary file
@@ -110,10 +127,13 @@ def gacha_controller(engine, temp_config_file):
         controller.engine = engine
         controller._ensure_engine_consistency()
 
-        # Manually set the pools since Path mocking might not work perfectly
+        # Manually set the pools and heroes config since Path mocking might not work perfectly
         with open(temp_config_file) as f:
             config = yaml.safe_load(f)
             controller.gacha_pools = config.get("gacha_pools", {})
+
+        # Set the heroes config
+        controller.heroes_config = sample_heroes_config["heroes"]
 
         return controller
 
@@ -194,7 +214,9 @@ class TestGachaController:
         assert test_pool["name"] == "Test Pool"
         assert test_pool["requiring_item_id"] == 1
         assert test_pool["num_requiring_item"] == 1
-        assert "Common Hero" in test_pool["heroes"]
+        assert (
+            "Common Hero" in test_pool["heroes"]
+        )  # This should now work with hero names from config
 
     def test_get_gacha_pool_info_existing(self, gacha_controller):
         """Test getting info for an existing gacha pool."""
@@ -222,9 +244,10 @@ class TestGachaController:
             result = gacha_controller.gacha(data["account_id"], "test_pool")
 
         assert result["success"] is True
+        assert result["hero_name"] == "Common Hero"  # Now comes from heroes config
         assert result["hero_obtained"]["name"] == "Common Hero"
         assert result["hero_obtained"]["probability"] == 0.6
-        assert result["hero_obtained"]["hero_id"] is not None
+        assert result["hero_obtained"]["hero_id"] == 1
         assert result["items_consumed"]["item_id"] == 1
         assert result["items_consumed"]["amount_consumed"] == 1
 
@@ -272,18 +295,18 @@ class TestGachaController:
     def test_select_random_hero_probability_distribution(self, gacha_controller):
         """Test hero selection probability distribution."""
         heroes = [
-            {"hero_name": "Common", "probability": 0.8},
-            {"hero_name": "Rare", "probability": 0.2},
+            {"hero_id": 1, "probability": 0.8},
+            {"hero_id": 2, "probability": 0.2},
         ]
 
         # Test with different random values
         with patch("src.py_libs.controllers.gacha_controller.random.random", return_value=0.5):
             selected = gacha_controller._select_random_hero(heroes)
-            assert selected["hero_name"] == "Common"
+            assert selected["hero_id"] == 1
 
         with patch("src.py_libs.controllers.gacha_controller.random.random", return_value=0.9):
             selected = gacha_controller._select_random_hero(heroes)
-            assert selected["hero_name"] == "Rare"
+            assert selected["hero_id"] == 2
 
     def test_select_random_hero_empty_list(self, gacha_controller):
         """Test hero selection with empty list."""
@@ -293,8 +316,8 @@ class TestGachaController:
     def test_select_random_hero_zero_probability(self, gacha_controller):
         """Test hero selection with zero total probability."""
         heroes = [
-            {"hero_name": "Hero1", "probability": 0},
-            {"hero_name": "Hero2", "probability": 0},
+            {"hero_id": 1, "probability": 0},
+            {"hero_id": 2, "probability": 0},
         ]
         result = gacha_controller._select_random_hero(heroes)
         assert result is None
@@ -369,6 +392,7 @@ class TestGachaController:
             result = gacha_controller.gacha(data["account_id"], "ten_pull_pool")
 
         assert result["success"] is True
+        assert result["hero_name"] == "Guaranteed Rare"  # Now comes from heroes config
         assert result["hero_obtained"]["name"] == "Guaranteed Rare"
         assert result["items_consumed"]["amount_consumed"] == 10
 
@@ -392,17 +416,13 @@ class TestGachaController:
         assert "Required: 10, Have: 5" in result["message"]
 
     def test_gacha_item_consumption_verification(self, gacha_controller, setup_test_data):
-        """Test that items are properly consumed during gacha."""
+        """Test that items are correctly consumed during gacha."""
         data = setup_test_data
 
         # Check initial item count
-        with Session(gacha_controller.engine) as session:
-            initial_item = (
-                session.query(AccountItem)
-                .filter_by(account_id=data["account_id"], item_id=1)
-                .first()
-            )
-            initial_amount = initial_item.amount
+        initial_amount = gacha_controller.item_controller.get_account_item_amount(
+            data["account_id"], 1
+        )
 
         # Perform gacha
         with patch("src.py_libs.controllers.gacha_controller.random.random", return_value=0.1):
@@ -411,61 +431,58 @@ class TestGachaController:
         assert result["success"] is True
 
         # Check final item count
-        with Session(gacha_controller.engine) as session:
-            final_item = (
-                session.query(AccountItem)
-                .filter_by(account_id=data["account_id"], item_id=1)
-                .first()
-            )
-            final_amount = final_item.amount
+        final_amount = gacha_controller.item_controller.get_account_item_amount(
+            data["account_id"], 1
+        )
 
         assert final_amount == initial_amount - 1
+        assert result["items_consumed"]["amount_consumed"] == 1
 
     def test_gacha_hero_probability_normalization(self, gacha_controller):
-        """Test that probability normalization works correctly."""
-        # Heroes with probabilities that don't sum to 1.0
+        """Test that hero selection works with non-normalized probabilities."""
+        # Create heroes with probabilities that don't sum to 1.0
         heroes = [
-            {"hero_name": "Hero1", "probability": 0.4},
-            {"hero_name": "Hero2", "probability": 0.8},  # Total = 1.2
+            {"hero_id": 1, "probability": 3.0},  # 75% when normalized
+            {"hero_id": 2, "probability": 1.0},  # 25% when normalized
         ]
 
-        # Should still work with normalization
-        with patch("src.py_libs.controllers.gacha_controller.random.random", return_value=0.2):
-            # 0.2 * 1.2 = 0.24, which should select Hero1 (cumulative 0.4)
+        # Test selection with value that should select first hero
+        with patch("src.py_libs.controllers.gacha_controller.random.random", return_value=0.5):
             selected = gacha_controller._select_random_hero(heroes)
-            assert selected["hero_name"] == "Hero1"
+            assert selected["hero_id"] == 1
 
-        with patch("src.py_libs.controllers.gacha_controller.random.random", return_value=0.7):
-            # 0.7 * 1.2 = 0.84, which should select Hero2 (cumulative 1.2)
+        # Test selection with value that should select second hero
+        with patch("src.py_libs.controllers.gacha_controller.random.random", return_value=0.8):
             selected = gacha_controller._select_random_hero(heroes)
-            assert selected["hero_name"] == "Hero2"
+            assert selected["hero_id"] == 2
 
     def test_gacha_with_mock_item_controller_failure(self, gacha_controller, setup_test_data):
-        """Test gacha when item removal fails."""
+        """Test gacha behavior when item removal fails."""
         data = setup_test_data
 
         # Mock item controller to fail on removal
         with patch.object(
             gacha_controller.item_controller, "remove_item_from_account"
         ) as mock_remove:
-            mock_remove.return_value = {"success": False, "message": "Removal failed"}
+            mock_remove.return_value = {"success": False}
 
             with patch("src.py_libs.controllers.gacha_controller.random.random", return_value=0.1):
                 result = gacha_controller.gacha(data["account_id"], "test_pool")
 
-            assert result["success"] is True  # Hero is still obtained
-            assert result["items_consumed"] == {}  # No items recorded as consumed
+        assert result["success"] is True  # Gacha should still succeed
+        assert result["hero_name"] == "Common Hero"
+        assert result["items_consumed"] == {}  # No items consumed due to failure
 
     def test_gacha_with_database_error_on_hero_creation(self, gacha_controller, setup_test_data):
-        """Test gacha when hero creation fails due to database error."""
+        """Test gacha behavior when hero creation fails."""
         data = setup_test_data
 
-        # Mock session to raise an exception
-        with patch("src.py_libs.controllers.gacha_controller.Session") as mock_session:
-            mock_session.return_value.__enter__.return_value.add.side_effect = Exception("DB Error")
+        # Mock _add_hero_to_account to fail
+        with patch.object(gacha_controller, "_add_hero_to_account") as mock_add_hero:
+            mock_add_hero.return_value = {"success": False, "message": "Database error"}
 
             with patch("src.py_libs.controllers.gacha_controller.random.random", return_value=0.1):
                 result = gacha_controller.gacha(data["account_id"], "test_pool")
 
-            assert result["success"] is False
-            assert "Failed to add hero to account" in result["message"]
+        assert result["success"] is False
+        assert "Failed to add hero to account" in result["message"]
