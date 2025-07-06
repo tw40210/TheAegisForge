@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from src.routers import data_router
+from src.routers import account_router
 
 app = FastAPI()
 
@@ -20,8 +20,8 @@ app.add_middleware(
 )
 
 app.include_router(
-    data_router.router,
-    tags=["Data"],
+    account_router.router,
+    tags=["Account"],
     responses={404: {"description": "Not found"}},
 )
 

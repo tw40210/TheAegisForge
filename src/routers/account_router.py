@@ -37,6 +37,7 @@ async def create_account(request: CreateAccountRequest):
     """
     try:
         controller = AccountController()
+        print("received id_token: ", request.id_token)
 
         account_data = controller.create_account(
             id_token=request.id_token,
