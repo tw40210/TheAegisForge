@@ -1,8 +1,10 @@
+import firebase_admin
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from firebase_admin import credentials
 
 from src.routers import account_router
 
@@ -36,4 +38,10 @@ async def not_found_exception_handler(request, exc):
 
 
 if __name__ == "__main__":
+    cred = credentials.Certificate(
+        "private_keys/the-aegis-forge-fe-firebase-adminsdk-fbsvc-ae3c292608.json"
+    )
+    firebase_admin.initialize_app(cred)
+    print("Current App Name:", firebase_admin.get_app().project_id)
+
     uvicorn.run("src.main:app", port=5000, host="0.0.0.0", log_level="info")
