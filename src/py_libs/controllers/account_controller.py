@@ -61,7 +61,7 @@ class AccountController:
                     email=email,
                     user_name=user_name,
                     stories=[],
-                    status=None,
+                    status="active",
                     party_sets=[],
                 )
                 session.add(account)

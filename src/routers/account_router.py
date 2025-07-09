@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, HTTPException
 from firebase_admin import auth
 from pydantic import BaseModel
 
@@ -16,14 +16,14 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/account")
 
 
-class CreateAccountRequest(BaseModel):
+class AccountRequest(BaseModel):
     """Request model for creating an account."""
 
     id_token: str
 
 
 @router.post("/create")
-async def create_account(request: CreateAccountRequest):
+async def create_account(request: AccountRequest):
     """Create a new account using Firebase ID token.
 
     Args:
@@ -60,8 +60,8 @@ async def create_account(request: CreateAccountRequest):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.get("/info")
-async def get_account_info(authorization: str = None):
+@router.post("/info")
+async def get_account_info(request: AccountRequest):
     """Get account information using Firebase ID token.
 
     Args:
@@ -74,20 +74,9 @@ async def get_account_info(authorization: str = None):
         HTTPException: If token is invalid or account not found
     """
 
-    if authorization is None:
-        authorization = Header(None)
     try:
-        # Check if authorization header is present
-        if not authorization:
-            raise HTTPException(status_code=401, detail="Authorization header is required")
 
-        # Extract token from Authorization header (expecting "Bearer <token>")
-        if not authorization.startswith("Bearer "):
-            raise HTTPException(
-                status_code=401, detail="Authorization header must be in format: Bearer <token>"
-            )
-
-        id_token = authorization.split(" ")[1]
+        id_token = request.id_token
 
         # Decode the Firebase ID token to get the UID
         try:
@@ -102,6 +91,10 @@ async def get_account_info(authorization: str = None):
 
         if account_data is None:
             raise HTTPException(status_code=404, detail="Account not found for this Firebase user")
+
+        account_id = account_data["id"]
+        account_data["heroes"] = controller.get_account_heroes(account_id)
+        account_data["inventory"] = controller.get_account_inventory(account_id)
 
         logger.info(f"Account info retrieved for: {account_data['name']}")
         return {"success": True, "data": account_data}

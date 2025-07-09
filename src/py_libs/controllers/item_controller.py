@@ -113,6 +113,74 @@ class ItemController:
                 "total_amount": 0,
             }
 
+    def send_gacha_items_to_account(self, account_id: int) -> dict[str, Any]:
+        """Send one of each gacha ticket to an account.
+
+        Args:
+            account_id (int): The account ID.
+
+        Returns:
+            dict[str, Any]: Dictionary with operation result.
+        """
+        gacha_item_ids = [1, 2, 3]  # Standard, Premium, Rare gacha tickets.
+        num_item_to_add = 1  # Send one of each
+
+        try:
+            with Session(self.engine) as session:
+                account = session.get(Account, account_id)
+                if not account:
+                    return {
+                        "success": False,
+                        "message": f"Account with id {account_id} not found.",
+                    }
+
+                items = session.query(Item).filter(Item.id.in_(gacha_item_ids)).all()
+                if len(items) != len(gacha_item_ids):
+                    found_item_ids = {item.id for item in items}
+                    missing_item_ids = set(gacha_item_ids) - found_item_ids
+                    return {
+                        "success": False,
+                        "message": f"Following gacha items do not exist: {list(missing_item_ids)}",
+                    }
+
+                results = []
+                for item in items:
+                    existing_item = (
+                        session.query(AccountItem)
+                        .filter_by(account_id=account_id, item_id=item.id)
+                        .first()
+                    )
+
+                    if existing_item:
+                        existing_item.amount += num_item_to_add
+                        total_amount = existing_item.amount
+                    else:
+                        new_item = AccountItem(
+                            account_id=account_id, item_id=item.id, amount=num_item_to_add
+                        )
+                        session.add(new_item)
+                        total_amount = num_item_to_add
+
+                    results.append(
+                        {
+                            "success": True,
+                            "message": f"Added {num_item_to_add} {item.name}(s) to {account.name}'s inventory",
+                            "account_id": account_id,
+                            "item_id": item.id,
+                            "item_name": item.name,
+                            "amount_added": num_item_to_add,
+                            "total_amount": total_amount,
+                        }
+                    )
+                session.commit()
+                return {"success": True, "details": results}
+
+        except IntegrityError as e:
+            return {
+                "success": False,
+                "message": f"Database integrity error occurred: {str(e)}",
+            }
+
     def get_item(self, item_id: int) -> dict[str, Any]:
         """Retrieve an item by its ID.
 

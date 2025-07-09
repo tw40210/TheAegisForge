@@ -42,12 +42,12 @@ def main():
 
     # Send items
     result = item_controller.send_item_to_account(item_id, num_items, account_id)
-    if result:
+    if result["success"]:
         print(f"✓ Success: {result['message']}")
         print(f"  Amount added: {result['amount_added']}")
         print(f"  Total amount now: {result['total_amount']}")
     else:
-        print("✗ Failed to send items")
+        print(f"✗ Failed to send items: {result['message']}")
 
     # Verify by checking inventory again
     new_amount = item_controller.get_account_item_amount(account_id, item_id)
@@ -58,10 +58,22 @@ def main():
         f"\n--- Testing: Send {num_items} more {items[0]['name']}(s) to {accounts[0]['name']} ---"
     )
     result2 = item_controller.send_item_to_account(item_id, num_items, account_id)
-    if result2:
+    if result2["success"]:
         print(f"✓ Success: {result2['message']}")
         print(f"  Amount added: {result2['amount_added']}")
         print(f"  Total amount now: {result2['total_amount']}")
+    else:
+        print(f"✗ Failed to send more items: {result2['message']}")
+
+    # Test sending gacha items to an account
+    print(f"\n--- Testing: Send gacha items to {accounts[0]['name']} ---")
+    gacha_result = item_controller.send_gacha_items_to_account(account_id)
+    if gacha_result and gacha_result.get("success"):
+        print("✓ Success: Gacha items sent successfully.")
+        for detail in gacha_result.get("details", []):
+            print(f"  - {detail['message']}")
+    else:
+        print(f"✗ Failed to send gacha items: {gacha_result.get('message')}")
 
     # Test error cases
     print("\n--- Testing Error Cases ---")
@@ -69,19 +81,19 @@ def main():
     # Test invalid account ID
     result_error1 = item_controller.send_item_to_account(item_id, num_items, 99999)
     print(
-        f"Invalid account ID: {'Failed as expected' if result_error1 is None else 'Unexpected success'}"
+        f"Invalid account ID: {'Failed as expected' if not result_error1['success'] else 'Unexpected success'}"
     )
 
     # Test invalid item ID
     result_error2 = item_controller.send_item_to_account(99999, num_items, account_id)
     print(
-        f"Invalid item ID: {'Failed as expected' if result_error2 is None else 'Unexpected success'}"
+        f"Invalid item ID: {'Failed as expected' if not result_error2['success'] else 'Unexpected success'}"
     )
 
     # Test invalid number of items
     result_error3 = item_controller.send_item_to_account(item_id, -5, account_id)
     print(
-        f"Negative items: {'Failed as expected' if result_error3 is None else 'Unexpected success'}"
+        f"Negative items: {'Failed as expected' if not result_error3['success'] else 'Unexpected success'}"
     )
 
     # Show final inventory state
