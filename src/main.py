@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from firebase_admin import credentials
 
-from src.routers import account_router
+from src.routers import account_router, item_router
 
 app = FastAPI()
 
@@ -24,6 +24,12 @@ app.add_middleware(
 app.include_router(
     account_router.router,
     tags=["Account"],
+    responses={404: {"description": "Not found"}},
+)
+
+app.include_router(
+    item_router.router,
+    tags=["Item"],
     responses={404: {"description": "Not found"}},
 )
 
