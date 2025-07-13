@@ -60,6 +60,47 @@ async def create_account(request: AccountRequest):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
+@router.post("/check")
+async def check_account_exists(request: AccountRequest):
+    """Check if an account exists for the given Firebase ID token.
+
+    Args:
+        request: AccountRequest containing id_token
+
+    Returns:
+        Dictionary with exists boolean and account name if found
+
+    Raises:
+        HTTPException: If token is invalid
+    """
+    try:
+        id_token = request.id_token
+
+        # Decode the Firebase ID token to get the UID
+        try:
+            decoded = auth.verify_id_token(id_token)
+            firebase_uid = decoded["uid"]
+        except Exception as e:
+            logger.error(f"Invalid Firebase token: {e}")
+            raise HTTPException(status_code=401, detail="Invalid Firebase ID token")
+
+        controller = AccountController()
+        account_data = controller.get_account_by_firebase_uid(firebase_uid)
+
+        if account_data is None:
+            logger.info(f"Account not found for Firebase UID: {firebase_uid}")
+            return {"success": True, "exists": False}
+
+        logger.info(f"Account found: {account_data['name']}")
+        return {"success": True, "exists": True, "account_name": account_data["name"]}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error checking account existence: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
 @router.post("/info")
 async def get_account_info(request: AccountRequest):
     """Get account information using Firebase ID token.
