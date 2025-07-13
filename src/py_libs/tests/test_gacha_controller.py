@@ -84,14 +84,14 @@ def sample_heroes_config():
     """Sample heroes configuration for testing."""
     return {
         "heroes": {
-            "1": {"name": "Common Hero"},
-            "2": {"name": "Rare Hero"},
-            "3": {"name": "Legendary Hero"},
-            "4": {"name": "Epic Hero"},
-            "5": {"name": "Mythic Hero"},
-            "6": {"name": "Divine Hero"},
-            "7": {"name": "Guaranteed Rare"},
-            "8": {"name": "Guaranteed Epic"},
+            1: {"name": "Common Hero"},
+            2: {"name": "Rare Hero"},
+            3: {"name": "Legendary Hero"},
+            4: {"name": "Epic Hero"},
+            5: {"name": "Mythic Hero"},
+            6: {"name": "Divine Hero"},
+            7: {"name": "Guaranteed Rare"},
+            8: {"name": "Guaranteed Epic"},
         }
     }
 
@@ -227,6 +227,18 @@ class TestGachaController:
         assert result["pool_info"]["name"] == "Test Pool"
         assert len(result["pool_info"]["heroes"]) == 3
 
+        # Verify the first hero has full information
+        first_hero = result["pool_info"]["heroes"][0]
+        assert first_hero["hero_id"] == 1
+        assert first_hero["name"] == "Common Hero"
+        assert first_hero["probability"] == 0.6
+        assert "description" in first_hero
+        assert "rarity" in first_hero
+        assert "element" in first_hero
+        assert "class" in first_hero
+        assert "stats" in first_hero
+        assert "skills" in first_hero
+
     def test_get_gacha_pool_info_nonexistent(self, gacha_controller):
         """Test getting info for a non-existent gacha pool."""
         result = gacha_controller.get_gacha_pool_info("nonexistent_pool")
@@ -234,6 +246,32 @@ class TestGachaController:
         assert result["success"] is False
         assert "does not exist" in result["message"]
         assert result["pool_info"] is None
+
+    def test_get_hero_info_by_id_existing(self, gacha_controller):
+        """Test getting hero info for an existing hero."""
+        hero_info = gacha_controller._get_hero_info_by_id(1)
+
+        assert hero_info["hero_id"] == 1
+        assert hero_info["name"] == "Common Hero"
+        assert "description" in hero_info
+        assert "rarity" in hero_info
+        assert "element" in hero_info
+        assert "class" in hero_info
+        assert "stats" in hero_info
+        assert "skills" in hero_info
+
+    def test_get_hero_info_by_id_nonexistent(self, gacha_controller):
+        """Test getting hero info for a non-existent hero."""
+        hero_info = gacha_controller._get_hero_info_by_id(999)
+
+        assert hero_info["hero_id"] == 999
+        assert hero_info["name"] == "Hero 999"
+        assert hero_info["description"] == ""
+        assert hero_info["rarity"] == "unknown"
+        assert hero_info["element"] == "unknown"
+        assert hero_info["class"] == "unknown"
+        assert hero_info["stats"] == {}
+        assert hero_info["skills"] == []
 
     def test_gacha_success(self, gacha_controller, setup_test_data):
         """Test successful gacha pull."""

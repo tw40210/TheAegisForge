@@ -60,10 +60,44 @@ class GachaController:
 
     def _get_hero_name_by_id(self, hero_id: int) -> str:
         """Get hero name by hero ID from configuration."""
-        hero_data = self.heroes_config.get(str(hero_id))
+        hero_data = self.heroes_config.get(hero_id)
         if hero_data:
             return hero_data.get("name", f"Hero {hero_id}")
         return f"Hero {hero_id}"
+
+    def _get_hero_info_by_id(self, hero_id: int) -> dict[str, Any]:
+        """Get full hero information by hero ID from configuration.
+
+        Args:
+            hero_id: The ID of the hero
+
+        Returns:
+            Dictionary containing full hero information
+        """
+        hero_data = self.heroes_config.get(hero_id)
+        if hero_data:
+            return {
+                "hero_id": hero_id,
+                "name": hero_data.get("name", f"Hero {hero_id}"),
+                "description": hero_data.get("description", ""),
+                "rarity": hero_data.get("rarity", "unknown"),
+                "element": hero_data.get("element", "unknown"),
+                "class": hero_data.get("class", "unknown"),
+                "stats": hero_data.get("stats", {}),
+                "skills": hero_data.get("skills", []),
+            }
+
+        # Return minimal info if hero not found in config
+        return {
+            "hero_id": hero_id,
+            "name": f"Hero {hero_id}",
+            "description": "",
+            "rarity": "unknown",
+            "element": "unknown",
+            "class": "unknown",
+            "stats": {},
+            "skills": [],
+        }
 
     def get_available_pools(self) -> list[dict[str, Any]]:
         """Get all available gacha pools.
@@ -76,7 +110,7 @@ class GachaController:
             hero_names = []
             for hero in pool_data.get("heroes", []):
                 hero_id = hero.get("hero_id")
-                if hero_id:
+                if hero_id is not None:
                     hero_names.append(self._get_hero_name_by_id(hero_id))
 
             pools.append(
@@ -292,6 +326,16 @@ class GachaController:
 
         pool_config = self.gacha_pools[gacha_pool_id]
 
+        # Convert hero data to include full hero information
+        heroes_with_info = []
+        for hero in pool_config.get("heroes", []):
+            hero_id = hero.get("hero_id")
+            if hero_id is not None:
+                hero_info = self._get_hero_info_by_id(hero_id)
+                # Add probability from pool config
+                hero_info["probability"] = hero.get("probability", 0)
+                heroes_with_info.append(hero_info)
+
         return {
             "success": True,
             "message": f"Gacha pool '{gacha_pool_id}' information retrieved",
@@ -301,7 +345,7 @@ class GachaController:
                 "description": pool_config.get("description", ""),
                 "requiring_item_id": pool_config.get("requiring_item_id"),
                 "num_requiring_item": pool_config.get("num_requiring_item"),
-                "heroes": pool_config.get("heroes", []),
+                "heroes": heroes_with_info,
             },
         }
 
