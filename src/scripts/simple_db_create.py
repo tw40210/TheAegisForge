@@ -92,10 +92,10 @@ def populate_sample_data():
         ]
 
         heroes = [
-            Hero(account_id=1, name=hero_names[0], level=15),
-            Hero(account_id=1, name=hero_names[1], level=20),
-            Hero(account_id=2, name=hero_names[2], level=12),
-            Hero(account_id=3, name=hero_names[3], level=8),
+            Hero(account_id=1, hero_index=1, name=hero_names[0], level=15),
+            Hero(account_id=1, hero_index=2, name=hero_names[1], level=20),
+            Hero(account_id=2, hero_index=3, name=hero_names[2], level=12),
+            Hero(account_id=3, hero_index=4, name=hero_names[3], level=8),
         ]
         session.add_all(heroes)
         session.commit()

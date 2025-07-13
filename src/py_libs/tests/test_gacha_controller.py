@@ -363,7 +363,7 @@ class TestGachaController:
     def test_add_hero_to_account_success(self, gacha_controller, setup_test_data):
         """Test successfully adding hero to account."""
         data = setup_test_data
-        result = gacha_controller._add_hero_to_account(data["account_id"], "Test Hero")
+        result = gacha_controller._add_hero_to_account(data["account_id"], "Test Hero", 1)
 
         assert result["success"] is True
         assert result["hero_id"] is not None
@@ -375,6 +375,7 @@ class TestGachaController:
             assert hero.name == "Test Hero"
             assert hero.level == 1
             assert hero.account_id == data["account_id"]
+            assert hero.hero_index == 1
 
     def test_multi_gacha_success(self, gacha_controller, setup_test_data):
         """Test successful multi-gacha pull."""

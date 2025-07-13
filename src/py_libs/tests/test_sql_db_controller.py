@@ -69,7 +69,7 @@ def test_create_hero(db_session):
     db_session.commit()
 
     # Create hero
-    hero = Hero(account_id=account.id, name="test_hero", level=5)
+    hero = Hero(account_id=account.id, hero_index=1, name="test_hero", level=5)
     db_session.add(hero)
     db_session.commit()
 
@@ -79,6 +79,7 @@ def test_create_hero(db_session):
     assert saved_hero.name == "test_hero"
     assert saved_hero.level == 5
     assert saved_hero.account_id == account.id
+    assert saved_hero.hero_index == 1
 
 
 def test_hero_trait_sets(db_session):
@@ -88,7 +89,7 @@ def test_hero_trait_sets(db_session):
     db_session.add(account)
     db_session.commit()
 
-    hero = Hero(account_id=account.id, name="test_hero")
+    hero = Hero(account_id=account.id, hero_index=2, name="test_hero")
     db_session.add(hero)
     db_session.commit()
 
@@ -118,7 +119,7 @@ def test_inventory_management(db_session):
     db_session.add(account)
     db_session.commit()
 
-    hero = Hero(account_id=account.id, name="test_hero")
+    hero = Hero(account_id=account.id, hero_index=3, name="test_hero")
     db_session.add(hero)
     db_session.commit()
 
@@ -157,7 +158,7 @@ def test_cascade_deletion(db_session):
     db_session.add(account)
     db_session.commit()
 
-    hero = Hero(account_id=account.id, name="test_hero")
+    hero = Hero(account_id=account.id, hero_index=4, name="test_hero")
     db_session.add(hero)
     db_session.commit()
 
@@ -194,7 +195,7 @@ def test_unique_constraints(db_session):
     db_session.rollback()
 
     # Test hero trait set slot uniqueness
-    hero = Hero(account_id=account1.id, name="test_hero")
+    hero = Hero(account_id=account1.id, hero_index=5, name="test_hero")
     db_session.add(hero)
     db_session.commit()
 

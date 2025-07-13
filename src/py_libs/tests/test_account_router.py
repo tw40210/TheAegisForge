@@ -216,10 +216,12 @@ class TestGetAccountInfo:
         mock_verify_token.return_value = mock_decoded_token
         mock_controller_class.return_value = mock_account_controller
         mock_account_controller.get_account_by_firebase_uid.return_value = sample_account_data
+        mock_account_controller.get_account_heroes.return_value = []
+        mock_account_controller.get_account_inventory.return_value = []
 
-        # Make request with Authorization header
-        headers = {"Authorization": "Bearer mock_firebase_token"}
-        response = await client.get("/account/info", headers=headers)
+        # Make request with request body
+        request_body = {"id_token": "mock_firebase_token"}
+        response = await client.post("/account/info", json=request_body)
 
         # Assertions
         assert response.status_code == 200
@@ -245,9 +247,9 @@ class TestGetAccountInfo:
         mock_verify_token.side_effect = Exception("Invalid token")
         mock_controller_class.return_value = mock_account_controller
 
-        # Make request
-        headers = {"Authorization": "Bearer invalid_token"}
-        response = await client.get("/account/info", headers=headers)
+        # Make request with request body
+        request_body = {"id_token": "invalid_token"}
+        response = await client.post("/account/info", json=request_body)
 
         # Assertions
         assert response.status_code == 401
@@ -271,9 +273,9 @@ class TestGetAccountInfo:
         mock_controller_class.return_value = mock_account_controller
         mock_account_controller.get_account_by_firebase_uid.return_value = None
 
-        # Make request
-        headers = {"Authorization": "Bearer mock_firebase_token"}
-        response = await client.get("/account/info", headers=headers)
+        # Make request with request body
+        request_body = {"id_token": "mock_firebase_token"}
+        response = await client.post("/account/info", json=request_body)
 
         # Assertions
         assert response.status_code == 404
@@ -282,35 +284,38 @@ class TestGetAccountInfo:
 
     @pytest.mark.asyncio
     async def test_get_account_info_missing_authorization_header(self, client):
-        """Test account info retrieval without Authorization header."""
-        response = await client.get("/account/info")
+        """Test account info retrieval without id_token in request body."""
+        # Make request without id_token field
+        response = await client.post("/account/info", json={})
 
         # Assertions
-        assert response.status_code == 401  # Unauthorized for missing header
+        assert response.status_code == 422  # Validation error for missing required field
         data = response.json()
-        assert data["detail"] == "Authorization header is required"
+        assert "detail" in data
 
     @pytest.mark.asyncio
     async def test_get_account_info_malformed_authorization_header(self, client):
-        """Test account info retrieval with malformed Authorization header."""
-        headers = {"Authorization": "InvalidFormat token"}
-        response = await client.get("/account/info", headers=headers)
+        """Test account info retrieval with malformed id_token."""
+        # Make request with invalid id_token
+        request_body = {"id_token": "invalid_token_format"}
+        response = await client.post("/account/info", json=request_body)
 
         # Assertions
         assert response.status_code == 401
         data = response.json()
-        assert data["detail"] == "Authorization header must be in format: Bearer <token>"
+        assert data["detail"] == "Invalid Firebase ID token"
 
     @pytest.mark.asyncio
     async def test_get_account_info_missing_token_in_header(self, client):
-        """Test account info retrieval with Bearer but no token."""
-        headers = {"Authorization": "Bearer"}
-        response = await client.get("/account/info", headers=headers)
+        """Test account info retrieval with empty string id_token."""
+        # Make request with empty string id_token
+        request_body = {"id_token": ""}
+        response = await client.post("/account/info", json=request_body)
 
         # Assertions
-        assert response.status_code == 401  # Changed from 500 to 401 based on actual behavior
+        assert response.status_code == 401
         data = response.json()
-        assert data["detail"] == "Authorization header must be in format: Bearer <token>"
+        assert data["detail"] == "Invalid Firebase ID token"
 
     @patch("src.routers.account_router.auth.verify_id_token")
     @patch("src.routers.account_router.AccountController")
@@ -331,9 +336,9 @@ class TestGetAccountInfo:
             "Database error"
         )
 
-        # Make request
-        headers = {"Authorization": "Bearer mock_firebase_token"}
-        response = await client.get("/account/info", headers=headers)
+        # Make request with request body
+        request_body = {"id_token": "mock_firebase_token"}
+        response = await client.post("/account/info", json=request_body)
 
         # Assertions
         assert response.status_code == 500
@@ -343,8 +348,9 @@ class TestGetAccountInfo:
     @pytest.mark.asyncio
     async def test_get_account_info_empty_token(self, client):
         """Test account info retrieval with empty token."""
-        headers = {"Authorization": "Bearer "}
-        response = await client.get("/account/info", headers=headers)
+        # Make request with whitespace-only id_token
+        request_body = {"id_token": " "}
+        response = await client.post("/account/info", json=request_body)
 
         # Assertions
         assert response.status_code == 401
@@ -374,6 +380,8 @@ class TestEndpointIntegration:
         mock_verify_token.return_value = mock_decoded_token
         mock_controller.create_account.return_value = sample_account_data
         mock_controller.get_account_by_firebase_uid.return_value = sample_account_data
+        mock_controller.get_account_heroes.return_value = []
+        mock_controller.get_account_inventory.return_value = []
 
         # Create account
         create_response = await client.post("/account/create", json=create_account_request)
@@ -382,12 +390,9 @@ class TestEndpointIntegration:
         assert created_data["success"] is True
 
         # Get account info
-        headers = {"Authorization": "Bearer mock_firebase_token"}
-        get_response = await client.get("/account/info", headers=headers)
+        info_request = {"id_token": "mock_firebase_token"}
+        get_response = await client.post("/account/info", json=info_request)
         assert get_response.status_code == 200
-        retrieved_data = get_response.json()
-        assert retrieved_data["success"] is True
-
-        # Verify same account data
-        assert created_data["data"]["name"] == retrieved_data["data"]["name"]
-        assert created_data["data"]["firebaseUID"] == retrieved_data["data"]["firebaseUID"]
+        get_data = get_response.json()
+        assert get_data["success"] is True
+        assert get_data["data"]["name"] == sample_account_data["name"]

@@ -233,6 +233,7 @@ class AccountController:
             return [
                 {
                     "id": hero.id,
+                    "hero_index": hero.hero_index,
                     "name": hero.name,
                     "level": hero.level,
                     "trait_sets": [

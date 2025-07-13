@@ -66,6 +66,7 @@ class Hero(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"), nullable=False)
+    hero_index: Mapped[int] = mapped_column(Integer, nullable=False)
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     level: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
@@ -82,7 +83,9 @@ class Hero(Base):
     # --- Dunder methods -----------------------------------------------------
 
     def __repr__(self) -> str:  # pragma: no cover
-        return f"<Hero id={self.id} name={self.name!r} lvl={self.level}>"
+        return (
+            f"<Hero id={self.id} name={self.name!r} lvl={self.level} hero_index={self.hero_index}>"
+        )
 
 
 class HeroTraitSet(Base):

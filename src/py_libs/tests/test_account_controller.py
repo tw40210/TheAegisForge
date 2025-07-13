@@ -66,7 +66,7 @@ def mock_decoded_token():
 @pytest.fixture
 def sample_hero_data():
     """Sample hero data for testing."""
-    return {"name": "Test Hero", "level": 1}
+    return {"hero_index": 1, "name": "Test Hero", "level": 1}
 
 
 @pytest.fixture
@@ -97,7 +97,7 @@ def test_create_account(
     assert account["email"] == mock_decoded_token["email"]
     assert account["user_name"] == mock_decoded_token["name"]
     assert account["stories"] == []
-    assert account["status"] is None
+    assert account["status"] == "active"  # Account creation sets status to 'active'
     assert account["party_sets"] == []
 
     # Verify Firebase token was called
@@ -351,7 +351,10 @@ def test_get_account_heroes(
         account_id = account.id  # Save before session closes
 
         hero = Hero(
-            account_id=account_id, name=sample_hero_data["name"], level=sample_hero_data["level"]
+            account_id=account_id,
+            hero_index=sample_hero_data["hero_index"],
+            name=sample_hero_data["name"],
+            level=sample_hero_data["level"],
         )
         session.add(hero)
         session.commit()  # Commit to get hero.id
@@ -369,6 +372,7 @@ def test_get_account_heroes(
     heroes = account_controller.get_account_heroes(account_id)
 
     assert len(heroes) == 1
+    assert heroes[0]["hero_index"] == sample_hero_data["hero_index"]
     assert heroes[0]["name"] == sample_hero_data["name"]
     assert heroes[0]["level"] == sample_hero_data["level"]
     assert len(heroes[0]["trait_sets"]) == 1

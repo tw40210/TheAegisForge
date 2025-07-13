@@ -212,7 +212,7 @@ class GachaController:
         hero_name = self._get_hero_name_by_id(hero_id)
 
         # Add hero to account
-        hero_result = self._add_hero_to_account(account_id, hero_name)
+        hero_result = self._add_hero_to_account(account_id, hero_name, hero_id)
         if not hero_result["success"]:
             return {
                 "success": False,
@@ -282,12 +282,15 @@ class GachaController:
         # Fallback to last hero if floating point errors occur
         return heroes[-1] if heroes else None
 
-    def _add_hero_to_account(self, account_id: int, hero_name: str) -> dict[str, Any]:
+    def _add_hero_to_account(
+        self, account_id: int, hero_name: str, hero_index: int
+    ) -> dict[str, Any]:
         """Add a new hero to the specified account.
 
         Args:
             account_id: The ID of the account
             hero_name: The name of the hero to add
+            hero_index: The index of the hero in the heroes.yaml config
 
         Returns:
             Dictionary with operation result
@@ -295,7 +298,10 @@ class GachaController:
         try:
             with Session(self.engine) as session:
                 hero = Hero(
-                    account_id=account_id, name=hero_name, level=1  # New heroes start at level 1
+                    account_id=account_id,
+                    hero_index=hero_index,
+                    name=hero_name,
+                    level=1,  # New heroes start at level 1
                 )
                 session.add(hero)
                 session.commit()

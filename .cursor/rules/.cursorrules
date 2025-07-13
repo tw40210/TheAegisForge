@@ -55,6 +55,7 @@
 - Test functions must start with `test_`
 - Fixture functions must end with `_fixture`
 - Minimum test coverage: 80%
+- If there is test failed, please firstly consider if it's because the test is outdated.
 
 ### Coverage Exclusions
 - Test files (*/tests/*)
