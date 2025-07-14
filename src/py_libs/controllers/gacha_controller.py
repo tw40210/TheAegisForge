@@ -236,18 +236,30 @@ class GachaController:
                     "amount_consumed": num_requiring_item,
                 }
 
+        # Create appropriate success message based on whether it's a new hero or amount increase
+        if hero_result.get("is_new_hero", True):
+            success_message = (
+                f"Successfully obtained {hero_name} from {pool_config.get('name', gacha_pool_id)}!"
+            )
+        else:
+            success_message = f"Obtained {hero_name} again! Amount increased to {hero_result.get('new_amount', 1)} from {pool_config.get('name', gacha_pool_id)}!"
+
         return {
             "success": True,
-            "message": f"Successfully obtained {hero_name} from {pool_config.get('name', gacha_pool_id)}!",
+            "message": success_message,
             "account_id": account_id,
             "gacha_pool_id": gacha_pool_id,
             "hero_name": hero_name,
             "hero_level": 1,
+            "is_new_hero": hero_result.get("is_new_hero", True),
+            "hero_amount": hero_result.get("new_amount", 1),
             "hero_obtained": {
                 "hero_id": hero_id,
                 "name": hero_name,
                 "probability": selected_hero["probability"],
                 "database_hero_id": hero_result["hero_id"],
+                "is_new_hero": hero_result.get("is_new_hero", True),
+                "new_amount": hero_result.get("new_amount", 1),
             },
             "items_consumed": items_consumed,
         }
@@ -285,7 +297,7 @@ class GachaController:
     def _add_hero_to_account(
         self, account_id: int, hero_name: str, hero_index: int
     ) -> dict[str, Any]:
-        """Add a new hero to the specified account.
+        """Add a hero to the specified account or increase amount if already owned.
 
         Args:
             account_id: The ID of the account
@@ -297,20 +309,53 @@ class GachaController:
         """
         try:
             with Session(self.engine) as session:
-                hero = Hero(
-                    account_id=account_id,
-                    hero_index=hero_index,
-                    name=hero_name,
-                    level=1,  # New heroes start at level 1
+                # Check if hero already exists for this account
+                existing_hero = (
+                    session.query(Hero)
+                    .filter_by(account_id=account_id, hero_index=hero_index)
+                    .first()
                 )
-                session.add(hero)
-                session.commit()
 
-                return {
-                    "success": True,
-                    "message": f"Hero {hero_name} added to account {account_id}",
-                    "hero_id": hero.id,
-                }
+                if existing_hero:
+                    # Hero already exists, increment amount
+                    existing_hero.amount += 1
+                    session.commit()
+
+                    return {
+                        "success": True,
+                        "message": f"Hero {hero_name} amount increased to {existing_hero.amount} for account {account_id}",
+                        "hero_id": existing_hero.id,
+                        "is_new_hero": False,
+                        "new_amount": existing_hero.amount,
+                    }
+                else:
+                    # Hero doesn't exist, create new one
+                    # Get rarity from hero config if available
+                    hero_info = self._get_hero_info_by_id(hero_index)
+                    rarity = (
+                        hero_info.get("rarity", "Common")
+                        if hero_info.get("rarity") != "unknown"
+                        else "Common"
+                    )
+
+                    hero = Hero(
+                        account_id=account_id,
+                        hero_index=hero_index,
+                        name=hero_name,
+                        level=1,  # New heroes start at level 1
+                        rarity=rarity,
+                        amount=1,  # New heroes start with amount 1
+                    )
+                    session.add(hero)
+                    session.commit()
+
+                    return {
+                        "success": True,
+                        "message": f"New hero {hero_name} added to account {account_id}",
+                        "hero_id": hero.id,
+                        "is_new_hero": True,
+                        "new_amount": 1,
+                    }
         except Exception as e:
             return {"success": False, "message": f"Database error: {str(e)}", "hero_id": None}
 

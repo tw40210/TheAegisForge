@@ -236,6 +236,8 @@ class AccountController:
                     "hero_index": hero.hero_index,
                     "name": hero.name,
                     "level": hero.level,
+                    "rarity": hero.rarity,
+                    "amount": hero.amount,
                     "trait_sets": [
                         {
                             "slot": trait_set.slot,

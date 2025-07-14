@@ -91,11 +91,16 @@ def populate_sample_data():
             hero_info.get("name", f"Hero {hero_id}") for hero_id, hero_info in hero_data.items()
         ]
 
+        # Extract rarity information for the first few heroes
+        hero_rarities = []
+        for _, hero_info in list(hero_data.items())[:4]:
+            hero_rarities.append(hero_info.get("rarity", "Common"))
+
         heroes = [
-            Hero(account_id=1, hero_index=1, name=hero_names[0], level=15),
-            Hero(account_id=1, hero_index=2, name=hero_names[1], level=20),
-            Hero(account_id=2, hero_index=3, name=hero_names[2], level=12),
-            Hero(account_id=3, hero_index=4, name=hero_names[3], level=8),
+            Hero(account_id=1, hero_index=1, name=hero_names[0], level=15, rarity=hero_rarities[0]),
+            Hero(account_id=1, hero_index=2, name=hero_names[1], level=20, rarity=hero_rarities[1]),
+            Hero(account_id=2, hero_index=3, name=hero_names[2], level=12, rarity=hero_rarities[2]),
+            Hero(account_id=3, hero_index=4, name=hero_names[3], level=8, rarity=hero_rarities[3]),
         ]
         session.add_all(heroes)
         session.commit()

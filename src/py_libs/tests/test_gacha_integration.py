@@ -197,9 +197,10 @@ class TestGachaIntegration:
             remaining_tickets = item_ctrl.get_account_item_amount(account_data["id"], 1)
             assert remaining_tickets == 17  # 20 - 3 = 17
 
-            # Verify heroes were added
+            # Verify heroes were added (total amount should equal num_pulls)
             heroes = account_ctrl.get_account_heroes(account_data["id"])
-            assert len(heroes) == num_pulls
+            total_hero_amount = sum(hero.get("amount", 1) for hero in heroes)
+            assert total_hero_amount == num_pulls
         else:
             # If gacha pool not configured, that's expected
             assert results["success"] is False
@@ -239,9 +240,10 @@ class TestGachaIntegration:
             remaining_tickets = item_ctrl.get_account_item_amount(account_data["id"], 1)
             assert remaining_tickets == 5  # 15 - 10 = 5
 
-            # Verify heroes were added
+            # Verify heroes were added (total amount should equal 10)
             heroes = account_ctrl.get_account_heroes(account_data["id"])
-            assert len(heroes) == 10
+            total_hero_amount = sum(hero.get("amount", 1) for hero in heroes)
+            assert total_hero_amount == 10
         else:
             # If gacha pool not configured, that's expected
             assert results["success"] is False
@@ -308,9 +310,10 @@ class TestGachaIntegration:
             # If gacha pool is configured, tickets should be consumed for successful pulls
             assert remaining_tickets < 5  # Some tickets should be consumed
 
-            # Verify some heroes were added (equal to successful pulls)
+            # Verify some heroes were added (total amount should equal successful pulls)
             heroes = account_ctrl.get_account_heroes(account_data["id"])
-            assert len(heroes) == len(results["heroes_obtained"])
+            total_hero_amount = sum(hero.get("amount", 1) for hero in heroes)
+            assert total_hero_amount == len(results["heroes_obtained"])
         else:
             # If gacha pool is not configured, no tickets should be consumed
             assert remaining_tickets == 5  # Should still have 5 tickets

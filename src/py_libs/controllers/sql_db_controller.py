@@ -69,6 +69,8 @@ class Hero(Base):
     hero_index: Mapped[int] = mapped_column(Integer, nullable=False)
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     level: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    rarity: Mapped[str | None] = mapped_column(String(32), default="Common")
+    amount: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
     # --- Relationships ------------------------------------------------------
 
@@ -84,7 +86,8 @@ class Hero(Base):
 
     def __repr__(self) -> str:  # pragma: no cover
         return (
-            f"<Hero id={self.id} name={self.name!r} lvl={self.level} hero_index={self.hero_index}>"
+            f"<Hero id={self.id} name={self.name!r} lvl={self.level} hero_index={self.hero_index} "
+            f"rarity={self.rarity!r} amount={self.amount}>"
         )
 
 

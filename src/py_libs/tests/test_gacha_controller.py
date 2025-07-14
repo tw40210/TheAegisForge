@@ -367,6 +367,8 @@ class TestGachaController:
 
         assert result["success"] is True
         assert result["hero_id"] is not None
+        assert result["is_new_hero"] is True
+        assert result["new_amount"] == 1
 
         # Verify hero was added to database
         with Session(gacha_controller.engine) as session:
@@ -376,6 +378,91 @@ class TestGachaController:
             assert hero.level == 1
             assert hero.account_id == data["account_id"]
             assert hero.hero_index == 1
+            assert hero.rarity == "Common"  # Default value
+            assert hero.amount == 1  # Default value
+
+    def test_add_duplicate_hero_increases_amount(self, gacha_controller, setup_test_data):
+        """Test that adding a duplicate hero increases the amount instead of creating a new record."""
+        data = setup_test_data
+
+        # Add hero first time
+        result1 = gacha_controller._add_hero_to_account(data["account_id"], "Test Hero", 1)
+        assert result1["success"] is True
+        assert result1["is_new_hero"] is True
+        assert result1["new_amount"] == 1
+        hero_id = result1["hero_id"]
+
+        # Add same hero again
+        result2 = gacha_controller._add_hero_to_account(data["account_id"], "Test Hero", 1)
+        assert result2["success"] is True
+        assert result2["is_new_hero"] is False
+        assert result2["new_amount"] == 2
+        assert result2["hero_id"] == hero_id  # Same hero ID
+
+        # Verify only one hero record exists with amount = 2
+        with Session(gacha_controller.engine) as session:
+            heroes = (
+                session.query(Hero).filter_by(account_id=data["account_id"], hero_index=1).all()
+            )
+            assert len(heroes) == 1
+            assert heroes[0].amount == 2
+            assert heroes[0].id == hero_id
+
+    def test_add_different_heroes_creates_separate_records(self, gacha_controller, setup_test_data):
+        """Test that adding different heroes creates separate records."""
+        data = setup_test_data
+
+        # Add first hero
+        result1 = gacha_controller._add_hero_to_account(data["account_id"], "Test Hero 1", 1)
+        assert result1["success"] is True
+        assert result1["is_new_hero"] is True
+
+        # Add different hero
+        result2 = gacha_controller._add_hero_to_account(data["account_id"], "Test Hero 2", 2)
+        assert result2["success"] is True
+        assert result2["is_new_hero"] is True
+        assert result2["hero_id"] != result1["hero_id"]  # Different hero IDs
+
+        # Verify two separate hero records exist
+        with Session(gacha_controller.engine) as session:
+            heroes = session.query(Hero).filter_by(account_id=data["account_id"]).all()
+            assert len(heroes) == 2
+            hero_indices = [hero.hero_index for hero in heroes]
+            assert 1 in hero_indices
+            assert 2 in hero_indices
+
+    def test_gacha_duplicate_hero_workflow(self, gacha_controller, setup_test_data):
+        """Test complete gacha workflow with duplicate hero."""
+        data = setup_test_data
+
+        # Mock random to ensure we get the first hero consistently
+        with patch("src.py_libs.controllers.gacha_controller.random.random", return_value=0.1):
+            # First gacha pull - should get new hero
+            result1 = gacha_controller.gacha(data["account_id"], "test_pool")
+            assert result1["success"] is True
+            assert result1["is_new_hero"] is True
+            assert result1["hero_amount"] == 1
+            assert result1["hero_obtained"]["is_new_hero"] is True
+            assert result1["hero_obtained"]["new_amount"] == 1
+
+            # Second gacha pull - should increment amount
+            result2 = gacha_controller.gacha(data["account_id"], "test_pool")
+            assert result2["success"] is True
+            assert result2["is_new_hero"] is False
+            assert result2["hero_amount"] == 2
+            assert result2["hero_obtained"]["is_new_hero"] is False
+            assert result2["hero_obtained"]["new_amount"] == 2
+            assert "again! Amount increased to 2" in result2["message"]
+
+        # Verify database state
+        with Session(gacha_controller.engine) as session:
+            heroes = (
+                session.query(Hero)
+                .filter_by(account_id=data["account_id"], hero_index=1)  # First hero from test_pool
+                .all()
+            )
+            assert len(heroes) == 1
+            assert heroes[0].amount == 2
 
     def test_multi_gacha_success(self, gacha_controller, setup_test_data):
         """Test successful multi-gacha pull."""

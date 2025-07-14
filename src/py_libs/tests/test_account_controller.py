@@ -355,6 +355,7 @@ def test_get_account_heroes(
             hero_index=sample_hero_data["hero_index"],
             name=sample_hero_data["name"],
             level=sample_hero_data["level"],
+            rarity="Rare",
         )
         session.add(hero)
         session.commit()  # Commit to get hero.id
