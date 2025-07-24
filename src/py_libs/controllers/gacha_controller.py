@@ -210,6 +210,7 @@ class GachaController:
         # Get hero name from ID
         hero_id = selected_hero["hero_id"]
         hero_name = self._get_hero_name_by_id(hero_id)
+        hero_info = self._get_hero_info_by_id(hero_id)
 
         # Add hero to account
         hero_result = self._add_hero_to_account(account_id, hero_name, hero_id)
@@ -260,6 +261,7 @@ class GachaController:
                 "database_hero_id": hero_result["hero_id"],
                 "is_new_hero": hero_result.get("is_new_hero", True),
                 "new_amount": hero_result.get("new_amount", 1),
+                "hero_info": hero_info,
             },
             "items_consumed": items_consumed,
         }
