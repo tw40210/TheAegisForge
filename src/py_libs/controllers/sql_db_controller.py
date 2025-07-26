@@ -193,6 +193,70 @@ class HeroItem(Base):
 
 
 # ---------------------------------------------------------------------------
+# Question and Summary tables
+# ---------------------------------------------------------------------------
+
+
+class Question(Base):
+    """Questions with type categorization and JSON content."""
+
+    __tablename__ = "questions"
+    __table_args__ = (
+        UniqueConstraint(
+            "question_type",
+            "summary_type",
+            "content_type",
+            "index_number",
+            name="uq_question_identifier",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    question_type: Mapped[str] = mapped_column(String(64), nullable=False)  # e.g., "mc_question"
+    summary_type: Mapped[str] = mapped_column(
+        String(128), nullable=False
+    )  # e.g., "InnovationSummary"
+    content_type: Mapped[str] = mapped_column(
+        String(64), nullable=False
+    )  # e.g., "innovation_points"
+    index_number: Mapped[int] = mapped_column(Integer, nullable=False)  # e.g., 0
+    content: Mapped[dict] = mapped_column(JSON, nullable=False)  # JSON question content
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return (
+            f"<Question id={self.id} type={self.question_type} "
+            f"summary={self.summary_type} content={self.content_type} idx={self.index_number}>"
+        )
+
+
+class Summary(Base):
+    """Summaries with type categorization and JSON content."""
+
+    __tablename__ = "summaries"
+    __table_args__ = (
+        UniqueConstraint(
+            "summary_type", "content_type", "index_number", name="uq_summary_identifier"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    summary_type: Mapped[str] = mapped_column(
+        String(128), nullable=False
+    )  # e.g., "InnovationSummary"
+    content_type: Mapped[str] = mapped_column(
+        String(64), nullable=False
+    )  # e.g., "innovation_points"
+    index_number: Mapped[int] = mapped_column(Integer, nullable=False)  # e.g., 0
+    content: Mapped[dict] = mapped_column(JSON, nullable=False)  # JSON summary content
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return (
+            f"<Summary id={self.id} type={self.summary_type} "
+            f"content={self.content_type} idx={self.index_number}>"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Utility: metadata creation helper
 # ---------------------------------------------------------------------------
 

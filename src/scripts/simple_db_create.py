@@ -1,3 +1,4 @@
+import json
 import sys
 from pathlib import Path
 
@@ -14,6 +15,8 @@ from src.py_libs.controllers.sql_db_controller import (
     HeroTrait,
     HeroTraitSet,
     Item,
+    Question,
+    Summary,
     engine,
 )
 
@@ -175,6 +178,145 @@ def populate_sample_data():
     print("✓ Sample data populated successfully!")
 
 
+def populate_questions_from_data():
+    """Populate questions table from output_question_data directory."""
+    print("\nLoading questions from output_question_data...")
+
+    questions_dir = Path("output_question_data")
+    if not questions_dir.exists():
+        print("⚠️  output_question_data directory not found, skipping questions")
+        return
+
+    with Session(engine) as session:
+        questions_to_add = []
+        question_count = 0
+
+        # Iterate through each subdirectory
+        for subdir in questions_dir.iterdir():
+            if not subdir.is_dir():
+                continue
+
+            # Extract subdirectory identifier (number after last underscore)
+            subdir_parts = subdir.name.split("_")
+            try:
+                subdir_id = int(subdir_parts[-1])
+            except (ValueError, IndexError):
+                print(f"⚠️  Skipping directory with invalid name format: {subdir.name}")
+                continue
+
+            # Find all question files (mc_question_*.json)
+            for question_file in subdir.glob("mc_question_*.json"):
+                # Parse filename to extract components
+                # Format: mc_question_{summary_type}_{content_type}_{index}.json
+                filename_parts = question_file.stem.split("_")
+                if len(filename_parts) < 4:
+                    print(f"⚠️  Skipping malformed question file: {question_file}")
+                    continue
+
+                question_type = filename_parts[0] + "_" + filename_parts[1]  # "mc_question"
+                summary_type = filename_parts[2]  # e.g., "InnovationSummary"
+                content_type = "_".join(filename_parts[3:-1])  # e.g., "innovation_points"
+                file_index = int(filename_parts[-1])  # e.g., 0
+
+                # Create globally unique index: subdir_id * 1000 + file_index
+                index_number = subdir_id * 1000 + file_index
+
+                try:
+                    with open(question_file, encoding="utf-8") as f:
+                        question_data = json.load(f)
+
+                    # Create Question record
+                    question = Question(
+                        question_type=question_type,
+                        summary_type=summary_type,
+                        content_type=content_type,
+                        index_number=index_number,
+                        content=question_data,
+                    )
+                    questions_to_add.append(question)
+                    question_count += 1
+
+                except (json.JSONDecodeError, ValueError) as e:
+                    print(f"⚠️  Error processing {question_file}: {e}")
+                    continue
+
+        session.add_all(questions_to_add)
+        session.commit()
+
+        print(
+            f"✓ Added {question_count} questions from {len(list(questions_dir.iterdir()))} directories"
+        )
+
+
+def populate_summaries_from_data():
+    """Populate summaries table from output_question_data directory."""
+    print("\nLoading summaries from output_question_data...")
+
+    summaries_dir = Path("output_question_data")
+    if not summaries_dir.exists():
+        print("⚠️  output_question_data directory not found, skipping summaries")
+        return
+
+    with Session(engine) as session:
+        summaries_to_add = []
+        summary_count = 0
+
+        # Iterate through each subdirectory
+        for subdir in summaries_dir.iterdir():
+            if not subdir.is_dir():
+                continue
+
+            # Extract subdirectory identifier (number after last underscore)
+            subdir_parts = subdir.name.split("_")
+            try:
+                subdir_id = int(subdir_parts[-1])
+            except (ValueError, IndexError):
+                print(f"⚠️  Skipping directory with invalid name format: {subdir.name}")
+                continue
+
+            # Find all summary files (summary_*.json)
+            for summary_file in subdir.glob("summary_*.json"):
+                # Parse filename to extract components
+                # Format: summary_{summary_type}.json
+                filename_parts = summary_file.stem.split("_", 1)
+                if len(filename_parts) < 2:
+                    print(f"⚠️  Skipping malformed summary file: {summary_file}")
+                    continue
+
+                summary_type = filename_parts[1]  # e.g., "InnovationSummary"
+
+                try:
+                    with open(summary_file, encoding="utf-8") as f:
+                        summary_data = json.load(f)
+
+                    # Determine content_type and index based on summary_type
+                    # For most summaries, we'll use the summary_type as content_type
+                    # Create globally unique index using subdirectory ID
+                    content_type = summary_type.lower()  # e.g., "innovationsummary"
+                    index_number = subdir_id * 1000  # Use subdir_id to make unique
+
+                    # Create Summary record
+                    summary = Summary(
+                        summary_type=summary_type,
+                        content_type=content_type,
+                        index_number=index_number,
+                        content=summary_data,
+                    )
+                    summaries_to_add.append(summary)
+                    summary_count += 1
+
+                except (json.JSONDecodeError, ValueError) as e:
+                    print(f"⚠️  Error processing {summary_file}: {e}")
+                    continue
+
+        session.add_all(summaries_to_add)
+        session.commit()
+
+        print(
+            f"✓ Added {summary_count} summaries from {len(list(summaries_dir.iterdir()))} directories"
+        )
+
+
 def verify_database():
     """Verify the database was created correctly."""
     print("\nVerifying database contents...")
@@ -205,14 +347,18 @@ def verify_database():
     # Show total items in database
     with Session(engine) as session:
         total_items = session.query(Item).count()
+        total_questions = session.query(Question).count()
+        total_summaries = session.query(Summary).count()
         print(f"\n✓ Total items in database: {total_items}")
+        print(f"✓ Total questions in database: {total_questions}")
+        print(f"✓ Total summaries in database: {total_summaries}")
 
 
 def main():
     """Main function to create and populate the database."""
     print("=== Enhanced Database Setup Script ===\n")
     print("This script will create a comprehensive game database using")
-    print("configuration files for items, heroes, and traits.\n")
+    print("configuration files for items, heroes, traits, and question/summary data.\n")
 
     try:
         # Create database schema
@@ -224,6 +370,10 @@ def main():
         # Populate with sample data
         populate_sample_data()
 
+        # Populate questions and summaries from output_question_data
+        populate_questions_from_data()
+        populate_summaries_from_data()
+
         # Verify the setup
         verify_database()
 
@@ -232,6 +382,7 @@ def main():
         print("✓ All items loaded from configuration")
         print("✓ Sample accounts created with gacha tickets")
         print("✓ Sample heroes with traits and equipment")
+        print("✓ Questions and summaries loaded from output_question_data")
         print("You can now use the GachaController and other controllers for testing.")
 
     except Exception as e:
