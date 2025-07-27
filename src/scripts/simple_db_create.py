@@ -196,8 +196,10 @@ def populate_questions_from_data():
             if not subdir.is_dir():
                 continue
 
-            # Extract subdirectory identifier (number after last underscore)
+            # Extract material name (full folder name) and subdirectory identifier
+
             subdir_parts = subdir.name.split("_")
+            material_name = subdir_parts[0]
             try:
                 subdir_id = int(subdir_parts[-1])
             except (ValueError, IndexError):
@@ -231,6 +233,7 @@ def populate_questions_from_data():
                         summary_type=summary_type,
                         content_type=content_type,
                         index_number=index_number,
+                        material_name=material_name,
                         content=question_data,
                     )
                     questions_to_add.append(question)
@@ -266,8 +269,10 @@ def populate_summaries_from_data():
             if not subdir.is_dir():
                 continue
 
-            # Extract subdirectory identifier (number after last underscore)
+            # Extract material name (full folder name) and subdirectory identifier
+
             subdir_parts = subdir.name.split("_")
+            material_name = subdir_parts[0]
             try:
                 subdir_id = int(subdir_parts[-1])
             except (ValueError, IndexError):
@@ -300,6 +305,7 @@ def populate_summaries_from_data():
                         summary_type=summary_type,
                         content_type=content_type,
                         index_number=index_number,
+                        material_name=material_name,
                         content=summary_data,
                     )
                     summaries_to_add.append(summary)

@@ -207,6 +207,7 @@ class Question(Base):
             "summary_type",
             "content_type",
             "index_number",
+            "material_name",
             name="uq_question_identifier",
         ),
     )
@@ -220,12 +221,16 @@ class Question(Base):
         String(64), nullable=False
     )  # e.g., "innovation_points"
     index_number: Mapped[int] = mapped_column(Integer, nullable=False)  # e.g., 0
+    material_name: Mapped[str] = mapped_column(
+        String(255), nullable=False
+    )  # folder name from output_question_data
     content: Mapped[dict] = mapped_column(JSON, nullable=False)  # JSON question content
 
     def __repr__(self) -> str:  # pragma: no cover
         return (
             f"<Question id={self.id} type={self.question_type} "
-            f"summary={self.summary_type} content={self.content_type} idx={self.index_number}>"
+            f"summary={self.summary_type} content={self.content_type} idx={self.index_number} "
+            f"material={self.material_name}>"
         )
 
 
@@ -235,7 +240,11 @@ class Summary(Base):
     __tablename__ = "summaries"
     __table_args__ = (
         UniqueConstraint(
-            "summary_type", "content_type", "index_number", name="uq_summary_identifier"
+            "summary_type",
+            "content_type",
+            "index_number",
+            "material_name",
+            name="uq_summary_identifier",
         ),
     )
 
@@ -247,12 +256,16 @@ class Summary(Base):
         String(64), nullable=False
     )  # e.g., "innovation_points"
     index_number: Mapped[int] = mapped_column(Integer, nullable=False)  # e.g., 0
+    material_name: Mapped[str] = mapped_column(
+        String(255), nullable=False
+    )  # folder name from output_question_data
     content: Mapped[dict] = mapped_column(JSON, nullable=False)  # JSON summary content
 
     def __repr__(self) -> str:  # pragma: no cover
         return (
             f"<Summary id={self.id} type={self.summary_type} "
-            f"content={self.content_type} idx={self.index_number}>"
+            f"content={self.content_type} idx={self.index_number} "
+            f"material={self.material_name}>"
         )
 
 

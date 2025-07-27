@@ -65,6 +65,7 @@
 ### Test commands
 - Use "python -m pytest" to call pytest module
 - Use "python -m pytest src/py_libs/qa_gpt/tests/ -v" to run a full test set.
+- Activate py_env before run commands
 
 ## Security Rules
 
