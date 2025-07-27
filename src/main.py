@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from firebase_admin import credentials
 
-from src.routers import account_router, gacha_router, item_router
+from src.routers import account_router, gacha_router, item_router, material_router
 
 app = FastAPI()
 
@@ -36,6 +36,12 @@ app.include_router(
 app.include_router(
     gacha_router.router,
     tags=["Gacha"],
+    responses={404: {"description": "Not found"}},
+)
+
+app.include_router(
+    material_router.router,
+    tags=["Story Material"],
     responses={404: {"description": "Not found"}},
 )
 

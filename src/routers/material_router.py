@@ -11,7 +11,7 @@ from src.py_libs.controllers.material_controller import MaterialController
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/material")
+router = APIRouter(prefix="/story_material")
 material_controller = MaterialController()
 
 
