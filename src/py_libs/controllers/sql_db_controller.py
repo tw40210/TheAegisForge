@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from sqlalchemy import (
     JSON,
+    Double,
     ForeignKey,
     Integer,
     String,
@@ -40,7 +41,9 @@ class Account(Base):
     firebaseUID: Mapped[str | None] = mapped_column(String(128), unique=True)
     email: Mapped[str | None] = mapped_column(String(255), unique=True)
     user_name: Mapped[str | None] = mapped_column(String(64))
-    stories: Mapped[list | None] = mapped_column(JSON, default=list)  # flexible JSON payload
+    stories: Mapped[list | None] = mapped_column(
+        JSON, default=list
+    )  # general story data, see material_stories for progress tracking
     status: Mapped[str | None] = mapped_column(String(32))
     party_sets: Mapped[list | None] = mapped_column(JSON, default=list)
 
@@ -50,6 +53,9 @@ class Account(Base):
         back_populates="account", cascade="all, delete-orphan"
     )
     inventory: Mapped[list[AccountItem]] = relationship(
+        back_populates="account", cascade="all, delete-orphan"
+    )
+    material_stories: Mapped[list[MaterialStory]] = relationship(
         back_populates="account", cascade="all, delete-orphan"
     )
 
@@ -267,6 +273,58 @@ class Summary(Base):
             f"content={self.content_type} idx={self.index_number} "
             f"material={self.material_name}>"
         )
+
+
+class QuestionSetResponse(Base):
+    """Response data for a specific question set within a material."""
+
+    __tablename__ = "question_set_responses"
+    __table_args__ = (
+        UniqueConstraint("material_story_id", "question_set_id", name="uq_material_question_set"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    material_story_id: Mapped[int] = mapped_column(
+        ForeignKey("material_stories.id"), nullable=False
+    )
+    question_set_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    finish_times: Mapped[list] = mapped_column(
+        String(128), nullable=False, default=list
+    )  # list of timestamps
+    correct_rates: Mapped[list] = mapped_column(
+        Double, nullable=False, default=list
+    )  # list of rates
+    answers_list: Mapped[list] = mapped_column(
+        JSON, nullable=False, default=list
+    )  # list of answer data
+
+    # --- Relationships ------------------------------------------------------
+
+    material_story: Mapped[MaterialStory] = relationship(back_populates="question_set_responses")
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<QuestionSetResponse id={self.id} material_story={self.material_story_id} question_set={self.question_set_id!r}>"
+
+
+class MaterialStory(Base):
+    """Material progress logging with question set tracking."""
+
+    __tablename__ = "material_stories"
+    __table_args__ = (UniqueConstraint("account_id", "material_name", name="uq_account_material"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"), nullable=False)
+    material_name: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    # --- Relationships ------------------------------------------------------
+
+    account: Mapped[Account] = relationship(back_populates="material_stories")
+    question_set_responses: Mapped[list[QuestionSetResponse]] = relationship(
+        back_populates="material_story", cascade="all, delete-orphan"
+    )
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<MaterialStory id={self.id} account={self.account_id} material={self.material_name!r}>"
 
 
 # ---------------------------------------------------------------------------

@@ -8,4 +8,4 @@ A game aiming to wisen players
 
 # TODO
 1.email as account
-3. Material progress logging
+3. Material progress logging - use json - material_name as primary_key record the question_set finish_time:list, correct_rate:list, answers:list 

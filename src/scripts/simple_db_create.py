@@ -15,7 +15,9 @@ from src.py_libs.controllers.sql_db_controller import (
     HeroTrait,
     HeroTraitSet,
     Item,
+    MaterialStory,
     Question,
+    QuestionSetResponse,
     Summary,
     engine,
 )
@@ -176,6 +178,73 @@ def populate_sample_data():
         session.commit()
 
     print("✓ Sample data populated successfully!")
+
+
+def populate_material_stories():
+    """Populate the database with sample material story data."""
+    print("\nPopulating database with sample material stories...")
+
+    with Session(engine) as session:
+        # Create sample material stories for accounts
+        material_stories = [
+            MaterialStory(account_id=1, material_name="python_basics"),
+            MaterialStory(account_id=1, material_name="advanced_algorithms"),
+            MaterialStory(account_id=2, material_name="python_basics"),
+            MaterialStory(account_id=3, material_name="python_basics"),
+        ]
+        session.add_all(material_stories)
+        session.commit()
+
+        # Create sample question set responses
+        question_set_responses = [
+            # Player1's progress on python_basics
+            QuestionSetResponse(
+                material_story_id=1,
+                question_set_id="intro_questions",
+                finish_times=["2023-01-01 00:00:00", "2023-01-02 00:00:00"],
+                correct_rates=[0.8, 0.9],
+                answers_list=[{"q1": "A", "q2": "B", "q3": "C"}, {"q1": "A", "q2": "C", "q3": "C"}],
+            ),
+            QuestionSetResponse(
+                material_story_id=1,
+                question_set_id="advanced_questions",
+                finish_times=["2023-01-03 00:00:00"],
+                correct_rates=[0.75],
+                answers_list=[{"q1": "B", "q2": "A", "q3": "D"}],
+            ),
+            # Player1's progress on advanced_algorithms
+            QuestionSetResponse(
+                material_story_id=2,
+                question_set_id="sorting_algorithms",
+                finish_times=[1672790400],
+                correct_rates=[0.85],
+                answers_list=[{"q1": "A", "q2": "C", "q3": "B", "q4": "D"}],
+            ),
+            # Player2's progress on python_basics
+            QuestionSetResponse(
+                material_story_id=3,
+                question_set_id="intro_questions",
+                finish_times=[1672876800, 1672963200, 1673049600],
+                correct_rates=[0.6, 0.7, 0.8],
+                answers_list=[
+                    {"q1": "B", "q2": "A", "q3": "C"},
+                    {"q1": "A", "q2": "B", "q3": "C"},
+                    {"q1": "A", "q2": "B", "q3": "C"},
+                ],
+            ),
+            # Player3's progress on python_basics (new player, just started)
+            QuestionSetResponse(
+                material_story_id=4,
+                question_set_id="intro_questions",
+                finish_times=[1673136000],
+                correct_rates=[0.5],
+                answers_list=[{"q1": "C", "q2": "A", "q3": "B"}],
+            ),
+        ]
+        session.add_all(question_set_responses)
+        session.commit()
+
+    print("✓ Sample material stories and question set responses populated successfully!")
 
 
 def populate_questions_from_data():
@@ -355,9 +424,13 @@ def verify_database():
         total_items = session.query(Item).count()
         total_questions = session.query(Question).count()
         total_summaries = session.query(Summary).count()
+        total_material_stories = session.query(MaterialStory).count()
+        total_question_set_responses = session.query(QuestionSetResponse).count()
         print(f"\n✓ Total items in database: {total_items}")
         print(f"✓ Total questions in database: {total_questions}")
         print(f"✓ Total summaries in database: {total_summaries}")
+        print(f"✓ Total material stories in database: {total_material_stories}")
+        print(f"✓ Total question set responses in database: {total_question_set_responses}")
 
 
 def main():
@@ -376,6 +449,9 @@ def main():
         # Populate with sample data
         populate_sample_data()
 
+        # Populate material stories and question set responses
+        populate_material_stories()
+
         # Populate questions and summaries from output_question_data
         populate_questions_from_data()
         populate_summaries_from_data()
@@ -388,6 +464,7 @@ def main():
         print("✓ All items loaded from configuration")
         print("✓ Sample accounts created with gacha tickets")
         print("✓ Sample heroes with traits and equipment")
+        print("✓ Sample material stories and question set responses created")
         print("✓ Questions and summaries loaded from output_question_data")
         print("You can now use the GachaController and other controllers for testing.")
 
