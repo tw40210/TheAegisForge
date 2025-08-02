@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from sqlalchemy import (
     JSON,
-    Double,
     ForeignKey,
     Integer,
     String,
@@ -289,11 +288,9 @@ class QuestionSetResponse(Base):
     )
     question_set_id: Mapped[str] = mapped_column(String(128), nullable=False)
     finish_times: Mapped[list] = mapped_column(
-        String(128), nullable=False, default=list
+        JSON, nullable=False, default=list
     )  # list of timestamps
-    correct_rates: Mapped[list] = mapped_column(
-        Double, nullable=False, default=list
-    )  # list of rates
+    correct_rates: Mapped[list] = mapped_column(JSON, nullable=False, default=list)  # list of rates
     answers_list: Mapped[list] = mapped_column(
         JSON, nullable=False, default=list
     )  # list of answer data

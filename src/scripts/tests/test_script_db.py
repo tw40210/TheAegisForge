@@ -60,6 +60,7 @@ def sample_heroes_config():
             "1": {"name": "Test Hero 1", "rarity": "Common"},
             "2": {"name": "Test Hero 2", "rarity": "Rare"},
             "3": {"name": "Test Hero 3", "rarity": "Epic"},
+            "4": {"name": "Test Hero 4", "rarity": "Legendary"},
         }
     }
 
@@ -72,6 +73,13 @@ def sample_herotraits_config():
             "1": {"name": "Strength", "description": "Increases attack power"},
             "2": {"name": "Defense", "description": "Increases defense"},
             "3": {"name": "Speed", "description": "Increases speed"},
+            "4": {"name": "Magic", "description": "Increases magic power"},
+            "5": {"name": "Agility", "description": "Increases agility"},
+            "6": {"name": "Intelligence", "description": "Increases intelligence"},
+            "7": {"name": "Luck", "description": "Increases luck"},
+            "8": {"name": "Vitality", "description": "Increases health"},
+            "9": {"name": "Mana", "description": "Increases mana"},
+            "10": {"name": "Charisma", "description": "Increases leadership"},
         }
     }
 
@@ -227,13 +235,18 @@ def test_populate_questions_from_data_success(mock_engine, engine, temp_output_d
             questions = session.query(Question).all()
             assert len(questions) == 2  # Two question files
 
-            # Check first question
-            q1 = questions[0]
-            assert q1.question_type == "mc_question"
-            assert q1.summary_type == "InnovationSummary"
-            assert q1.content_type == "innovation_points"
-            assert q1.index_number == 0
-            assert "question_1" in q1.content
+            # Check questions (order may vary due to file system)
+        question_types = [q.question_type for q in questions]
+        summary_types = [q.summary_type for q in questions]
+        assert all(qt == "mc_question" for qt in question_types)
+        assert "InnovationSummary" in summary_types
+        assert "TechnicalSummary" in summary_types
+
+        # Check specific question content
+        innovation_q = next(q for q in questions if q.summary_type == "InnovationSummary")
+        assert innovation_q.content_type == "innovation_points"
+        assert innovation_q.index_number == 1000  # subdir_id (1) * 1000 + file_index (0)
+        assert "question_1" in innovation_q.content
 
     finally:
         os.chdir(original_cwd)
@@ -251,17 +264,21 @@ def test_populate_summaries_from_data_success(mock_engine, engine, temp_output_d
         with patch("src.scripts.simple_db_create.engine", engine):
             populate_summaries_from_data()
 
-        # Verify summaries were added
+            # Verify summaries were added
         with Session(engine) as session:
             summaries = session.query(Summary).all()
             assert len(summaries) == 2  # Two summary files
 
-            # Check first summary
-            s1 = summaries[0]
-            assert s1.summary_type == "InnovationSummary"
-            assert s1.content_type == "innovationsummary"
-            assert s1.index_number == 0
-            assert "summary_type" in s1.content
+            # Check summaries (order may vary due to file system)
+            summary_types = [s.summary_type for s in summaries]
+            assert "InnovationSummary" in summary_types
+            assert "TechnicalSummary" in summary_types
+
+            # Check specific summary content
+            innovation_s = next(s for s in summaries if s.summary_type == "InnovationSummary")
+            assert innovation_s.content_type == "innovationsummary"
+            assert innovation_s.index_number == 1000  # subdir_id (1) * 1000 + 0
+            assert "summary_type" in innovation_s.content
 
     finally:
         os.chdir(original_cwd)
@@ -462,6 +479,7 @@ def test_empty_output_directory(engine, tmp_path):
 @patch("src.scripts.simple_db_create.verify_database")
 @patch("src.scripts.simple_db_create.populate_summaries_from_data")
 @patch("src.scripts.simple_db_create.populate_questions_from_data")
+@patch("src.scripts.simple_db_create.populate_material_stories")
 @patch("src.scripts.simple_db_create.populate_sample_data")
 @patch("src.scripts.simple_db_create.populate_items_from_config")
 @patch("src.scripts.simple_db_create.create_database")
@@ -469,6 +487,7 @@ def test_main_integration_success(
     mock_create_db,
     mock_populate_items,
     mock_populate_sample,
+    mock_populate_material_stories,
     mock_populate_questions,
     mock_populate_summaries,
     mock_verify,
@@ -480,6 +499,7 @@ def test_main_integration_success(
     mock_create_db.return_value = None
     mock_populate_items.return_value = None
     mock_populate_sample.return_value = None
+    mock_populate_material_stories.return_value = None
     mock_populate_questions.return_value = None
     mock_populate_summaries.return_value = None
     mock_verify.return_value = None

@@ -1,11 +1,13 @@
 """Unit tests for the MaterialController class."""
 
+from unittest.mock import patch
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from src.py_libs.controllers.material_controller import MaterialController
-from src.py_libs.controllers.sql_db_controller import Base, Question, Summary
+from src.py_libs.controllers.sql_db_controller import Account, Base, Question, Summary
 
 # Test database URL
 TEST_DB_URL = "sqlite:///:memory:"
@@ -307,3 +309,136 @@ class TestListAvailableMaterials:
 
         assert result["total_materials"] == 0
         assert result["materials"] == []
+
+    @patch("firebase_admin.auth.verify_id_token")
+    def test_submit_question_set_response(self, mock_verify_token, material_controller, engine):
+        """Test submitting a question set response."""
+
+        # Mock Firebase token verification
+        mock_verify_token.return_value = {"uid": "test_firebase_uid"}
+
+        with Session(engine) as session:
+            # Create test account
+            account = Account(
+                name="Test User", firebaseUID="test_firebase_uid", email="test@example.com"
+            )
+            session.add(account)
+            session.commit()
+
+            # Create test questions with proper structure
+            question_content = {
+                "question_1": {
+                    "question_description": "Test question 1?",
+                    "choice_1": {
+                        "choice_description": "Correct answer",
+                        "answer": True,
+                        "explanation": "This is correct",
+                    },
+                    "choice_2": {
+                        "choice_description": "Wrong answer",
+                        "answer": False,
+                        "explanation": "This is wrong",
+                    },
+                    "choice_3": {
+                        "choice_description": "Another wrong",
+                        "answer": False,
+                        "explanation": "Also wrong",
+                    },
+                    "choice_4": {
+                        "choice_description": "Last wrong",
+                        "answer": False,
+                        "explanation": "Still wrong",
+                    },
+                },
+                "question_2": {
+                    "question_description": "Test question 2?",
+                    "choice_1": {
+                        "choice_description": "Wrong answer",
+                        "answer": False,
+                        "explanation": "This is wrong",
+                    },
+                    "choice_2": {
+                        "choice_description": "Correct answer",
+                        "answer": True,
+                        "explanation": "This is correct",
+                    },
+                    "choice_3": {
+                        "choice_description": "Another wrong",
+                        "answer": False,
+                        "explanation": "Also wrong",
+                    },
+                    "choice_4": {
+                        "choice_description": "Last wrong",
+                        "answer": False,
+                        "explanation": "Still wrong",
+                    },
+                },
+            }
+
+            question = Question(
+                question_type="mc_question",
+                summary_type="TestSummary",
+                content_type="test_content",
+                index_number=1,
+                material_name="test_material",
+                content=question_content,
+            )
+            session.add(question)
+            session.commit()
+
+        # Test submitting responses
+        user_answers = {
+            "question_1": "choice_1",  # Correct
+            "question_2": "choice_1",  # Wrong (correct is choice_2)
+        }
+
+        result = material_controller.submit_question_set_response(
+            id_token="mock_token",
+            answer=user_answers,
+            question_set_id="test_set_1",
+            material_name="test_material",
+        )
+
+        # Verify response
+        assert result["success"] is True
+        assert result["material_name"] == "test_material"
+        assert result["question_set_id"] == "test_set_1"
+        assert result["correct_rate"] == 0.5  # 1 out of 2 correct
+        assert result["correct_count"] == 1
+        assert result["total_count"] == 2
+        assert "finish_time" in result
+        assert "account_id" in result
+
+        mock_verify_token.assert_called_once_with("mock_token")
+
+    @patch("firebase_admin.auth.verify_id_token")
+    def test_submit_question_set_response_invalid_token(
+        self, mock_verify_token, material_controller
+    ):
+        """Test submitting response with invalid token."""
+        from src.py_libs.controllers.material_controller import InvalidTokenError
+
+        mock_verify_token.side_effect = Exception("Invalid token")
+
+        with pytest.raises(InvalidTokenError):
+            material_controller.submit_question_set_response(
+                id_token="invalid_token",
+                answer={"question_1": "choice_1"},
+                question_set_id="test_set",
+                material_name="test_material",
+            )
+
+    @patch("firebase_admin.auth.verify_id_token")
+    def test_submit_question_set_response_account_not_found(
+        self, mock_verify_token, material_controller
+    ):
+        """Test submitting response when account doesn't exist."""
+        mock_verify_token.return_value = {"uid": "nonexistent_uid"}
+
+        with pytest.raises(ValueError, match="Account not found for this Firebase user"):
+            material_controller.submit_question_set_response(
+                id_token="valid_token",
+                answer={"question_1": "choice_1"},
+                question_set_id="test_set",
+                material_name="test_material",
+            )
