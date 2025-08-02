@@ -5,7 +5,10 @@ import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from src.py_libs.controllers.material_controller import MaterialController
+from src.py_libs.controllers.material_controller import (
+    InvalidTokenError,
+    MaterialController,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -18,6 +21,15 @@ material_controller = MaterialController()
 class MaterialRequest(BaseModel):
     """Request model for material operations."""
 
+    material_name: str
+
+
+class QuestionSetResponseRequest(BaseModel):
+    """Request model for submitting question set responses."""
+
+    id_token: str
+    answer: dict[str, str]  # Dictionary mapping question IDs to user's choice
+    question_set_id: str
     material_name: str
 
 
@@ -209,4 +221,43 @@ async def get_material_data_post(request: MaterialRequest):
 
     except Exception as e:
         logger.error(f"Error retrieving material data for {request.material_name}: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post("/submit_response", tags=["materials"])
+async def submit_question_set_response(request: QuestionSetResponseRequest):
+    """Submit user's response to a question set and calculate correct rate.
+
+    Args:
+        request: QuestionSetResponseRequest containing id_token, answer, question_set_id, and material_name
+
+    Returns:
+        Dictionary with success status and response data including correct rate
+
+    Raises:
+        HTTPException: If token is invalid, account not found, or other errors occur
+    """
+    try:
+        response_data = material_controller.submit_question_set_response(
+            id_token=request.id_token,
+            answer=request.answer,
+            question_set_id=request.question_set_id,
+            material_name=request.material_name,
+        )
+
+        logger.info(
+            f"Question set response submitted - Material: {request.material_name}, "
+            f"Question Set: {request.question_set_id}, "
+            f"Correct Rate: {response_data['correct_rate']:.2%}"
+        )
+        return {"success": True, "data": response_data}
+
+    except InvalidTokenError as e:
+        logger.error(f"Invalid Firebase token: {e}")
+        raise HTTPException(status_code=401, detail="Invalid Firebase ID token")
+    except ValueError as e:
+        logger.error(f"Value error in question set response: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error submitting question set response: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")

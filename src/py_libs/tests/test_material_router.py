@@ -126,7 +126,7 @@ class TestGetQuestionsByMaterialNameGET:
         """Test successful retrieval of questions."""
         mock_controller.get_questions_by_material_name.return_value = sample_questions
 
-        response = await client.get("/material/questions/test_material")
+        response = await client.get("/story_material/questions/test_material")
 
         assert response.status_code == 200
         data = response.json()
@@ -144,7 +144,7 @@ class TestGetQuestionsByMaterialNameGET:
         """Test retrieval of questions for non-existent material."""
         mock_controller.get_questions_by_material_name.return_value = []
 
-        response = await client.get("/material/questions/nonexistent_material")
+        response = await client.get("/story_material/questions/nonexistent_material")
 
         assert response.status_code == 200
         data = response.json()
@@ -159,7 +159,7 @@ class TestGetQuestionsByMaterialNameGET:
         """Test handling of controller errors."""
         mock_controller.get_questions_by_material_name.side_effect = Exception("Database error")
 
-        response = await client.get("/material/questions/test_material")
+        response = await client.get("/story_material/questions/test_material")
 
         assert response.status_code == 500
         data = response.json()
@@ -175,7 +175,7 @@ class TestGetSummariesByMaterialNameGET:
         """Test successful retrieval of summaries."""
         mock_controller.get_summaries_by_material_name.return_value = sample_summaries
 
-        response = await client.get("/material/summaries/test_material")
+        response = await client.get("/story_material/summaries/test_material")
 
         assert response.status_code == 200
         data = response.json()
@@ -193,7 +193,7 @@ class TestGetSummariesByMaterialNameGET:
         """Test retrieval of summaries for non-existent material."""
         mock_controller.get_summaries_by_material_name.return_value = []
 
-        response = await client.get("/material/summaries/nonexistent_material")
+        response = await client.get("/story_material/summaries/nonexistent_material")
 
         assert response.status_code == 200
         data = response.json()
@@ -208,7 +208,7 @@ class TestGetSummariesByMaterialNameGET:
         """Test handling of controller errors."""
         mock_controller.get_summaries_by_material_name.side_effect = Exception("Database error")
 
-        response = await client.get("/material/summaries/test_material")
+        response = await client.get("/story_material/summaries/test_material")
 
         assert response.status_code == 500
         data = response.json()
@@ -224,7 +224,7 @@ class TestGetMaterialDataGET:
         """Test successful retrieval of material data."""
         mock_controller.get_material_data.return_value = sample_material_data
 
-        response = await client.get("/material/data/test_material")
+        response = await client.get("/story_material/data/test_material")
 
         assert response.status_code == 200
         data = response.json()
@@ -241,7 +241,7 @@ class TestGetMaterialDataGET:
         """Test handling of controller errors."""
         mock_controller.get_material_data.side_effect = Exception("Database error")
 
-        response = await client.get("/material/data/test_material")
+        response = await client.get("/story_material/data/test_material")
 
         assert response.status_code == 500
         data = response.json()
@@ -257,7 +257,7 @@ class TestListAvailableMaterials:
         """Test successful listing of materials."""
         mock_controller.list_available_materials.return_value = sample_materials_list
 
-        response = await client.get("/material/list")
+        response = await client.get("/story_material/list")
 
         assert response.status_code == 200
         data = response.json()
@@ -276,7 +276,7 @@ class TestListAvailableMaterials:
             "total_materials": 0,
         }
 
-        response = await client.get("/material/list")
+        response = await client.get("/story_material/list")
 
         assert response.status_code == 200
         data = response.json()
@@ -290,7 +290,7 @@ class TestListAvailableMaterials:
         """Test handling of controller errors."""
         mock_controller.list_available_materials.side_effect = Exception("Database error")
 
-        response = await client.get("/material/list")
+        response = await client.get("/story_material/list")
 
         assert response.status_code == 500
         data = response.json()
@@ -308,7 +308,7 @@ class TestGetQuestionsByMaterialNamePOST:
         """Test successful retrieval of questions via POST."""
         mock_controller.get_questions_by_material_name.return_value = sample_questions
 
-        response = await client.post("/material/questions", json=material_request)
+        response = await client.post("/story_material/questions", json=material_request)
 
         assert response.status_code == 200
         data = response.json()
@@ -325,7 +325,7 @@ class TestGetQuestionsByMaterialNamePOST:
         """Test POST questions for non-existent material."""
         mock_controller.get_questions_by_material_name.return_value = []
 
-        response = await client.post("/material/questions", json=material_request)
+        response = await client.post("/story_material/questions", json=material_request)
 
         assert response.status_code == 200
         data = response.json()
@@ -336,7 +336,7 @@ class TestGetQuestionsByMaterialNamePOST:
     @pytest.mark.asyncio
     async def test_post_questions_invalid_request(self, client):
         """Test POST questions with invalid request body."""
-        response = await client.post("/material/questions", json={})
+        response = await client.post("/story_material/questions", json={})
 
         assert response.status_code == 422  # Validation error
 
@@ -352,7 +352,7 @@ class TestGetSummariesByMaterialNamePOST:
         """Test successful retrieval of summaries via POST."""
         mock_controller.get_summaries_by_material_name.return_value = sample_summaries
 
-        response = await client.post("/material/summaries", json=material_request)
+        response = await client.post("/story_material/summaries", json=material_request)
 
         assert response.status_code == 200
         data = response.json()
@@ -369,7 +369,7 @@ class TestGetSummariesByMaterialNamePOST:
         """Test POST summaries for non-existent material."""
         mock_controller.get_summaries_by_material_name.return_value = []
 
-        response = await client.post("/material/summaries", json=material_request)
+        response = await client.post("/story_material/summaries", json=material_request)
 
         assert response.status_code == 200
         data = response.json()
@@ -380,7 +380,7 @@ class TestGetSummariesByMaterialNamePOST:
     @pytest.mark.asyncio
     async def test_post_summaries_invalid_request(self, client):
         """Test POST summaries with invalid request body."""
-        response = await client.post("/material/summaries", json={})
+        response = await client.post("/story_material/summaries", json={})
 
         assert response.status_code == 422  # Validation error
 
@@ -396,7 +396,7 @@ class TestGetMaterialDataPOST:
         """Test successful retrieval of material data via POST."""
         mock_controller.get_material_data.return_value = sample_material_data
 
-        response = await client.post("/material/data", json=material_request)
+        response = await client.post("/story_material/data", json=material_request)
 
         assert response.status_code == 200
         data = response.json()
@@ -420,7 +420,7 @@ class TestGetMaterialDataPOST:
         }
         mock_controller.get_material_data.return_value = empty_data
 
-        response = await client.post("/material/data", json=material_request)
+        response = await client.post("/story_material/data", json=material_request)
 
         assert response.status_code == 200
         data = response.json()
@@ -431,6 +431,137 @@ class TestGetMaterialDataPOST:
     @pytest.mark.asyncio
     async def test_post_material_data_invalid_request(self, client):
         """Test POST material data with invalid request body."""
-        response = await client.post("/material/data", json={})
+        response = await client.post("/story_material/data", json={})
+
+        assert response.status_code == 422  # Validation error
+
+
+class TestSubmitQuestionSetResponse:
+    """Test submit question set response endpoint."""
+
+    @pytest.mark.asyncio
+    @patch("src.routers.material_router.material_controller")
+    async def test_submit_question_set_response_success(self, mock_controller, client):
+        """Test successful question set response submission."""
+        # Mock successful response
+        mock_response_data = {
+            "success": True,
+            "material_name": "test_material",
+            "question_set_id": "test_set_1",
+            "correct_rate": 0.75,
+            "correct_count": 3,
+            "total_count": 4,
+            "finish_time": "2023-12-01T10:00:00",
+            "account_id": 1,
+        }
+        mock_controller.submit_question_set_response.return_value = mock_response_data
+
+        request_data = {
+            "id_token": "valid_firebase_token",
+            "answer": {
+                "question_1": "choice_1",
+                "question_2": "choice_2",
+                "question_3": "choice_3",
+                "question_4": "choice_4",
+            },
+            "question_set_id": "test_set_1",
+            "material_name": "test_material",
+        }
+
+        response = await client.post("/story_material/submit_response", json=request_data)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert data["data"]["correct_rate"] == 0.75
+        assert data["data"]["material_name"] == "test_material"
+
+        # Verify controller was called with correct parameters
+        mock_controller.submit_question_set_response.assert_called_once_with(
+            id_token="valid_firebase_token",
+            answer={
+                "question_1": "choice_1",
+                "question_2": "choice_2",
+                "question_3": "choice_3",
+                "question_4": "choice_4",
+            },
+            question_set_id="test_set_1",
+            material_name="test_material",
+        )
+
+    @pytest.mark.asyncio
+    @patch("src.routers.material_router.material_controller")
+    async def test_submit_question_set_response_invalid_token(self, mock_controller, client):
+        """Test question set response submission with invalid token."""
+        from src.py_libs.controllers.material_controller import InvalidTokenError
+
+        # Mock invalid token error
+        mock_controller.submit_question_set_response.side_effect = InvalidTokenError(
+            "Invalid token"
+        )
+
+        request_data = {
+            "id_token": "invalid_token",
+            "answer": {"question_1": "choice_1"},
+            "question_set_id": "test_set_1",
+            "material_name": "test_material",
+        }
+
+        response = await client.post("/story_material/submit_response", json=request_data)
+
+        assert response.status_code == 401
+        data = response.json()
+        assert "Invalid Firebase ID token" in data["detail"]
+
+    @pytest.mark.asyncio
+    @patch("src.routers.material_router.material_controller")
+    async def test_submit_question_set_response_value_error(self, mock_controller, client):
+        """Test question set response submission with value error."""
+        # Mock value error
+        mock_controller.submit_question_set_response.side_effect = ValueError("No questions found")
+
+        request_data = {
+            "id_token": "valid_token",
+            "answer": {"question_1": "choice_1"},
+            "question_set_id": "test_set_1",
+            "material_name": "nonexistent_material",
+        }
+
+        response = await client.post("/story_material/submit_response", json=request_data)
+
+        assert response.status_code == 400
+        data = response.json()
+        assert "No questions found" in data["detail"]
+
+    @pytest.mark.asyncio
+    @patch("src.routers.material_router.material_controller")
+    async def test_submit_question_set_response_server_error(self, mock_controller, client):
+        """Test question set response submission with server error."""
+        # Mock generic exception
+        mock_controller.submit_question_set_response.side_effect = Exception("Database error")
+
+        request_data = {
+            "id_token": "valid_token",
+            "answer": {"question_1": "choice_1"},
+            "question_set_id": "test_set_1",
+            "material_name": "test_material",
+        }
+
+        response = await client.post("/story_material/submit_response", json=request_data)
+
+        assert response.status_code == 500
+        data = response.json()
+        assert "Internal server error" in data["detail"]
+
+    @pytest.mark.asyncio
+    async def test_submit_question_set_response_invalid_request(self, client):
+        """Test question set response submission with invalid request body."""
+        # Missing required fields
+        request_data = {
+            "id_token": "valid_token",
+            # Missing answer, question_set_id, material_name
+        }
+
+        response = await client.post("/story_material/submit_response", json=request_data)
 
         assert response.status_code == 422  # Validation error
