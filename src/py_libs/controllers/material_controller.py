@@ -198,30 +198,39 @@ class MaterialController:
             # Find questions for this question set and material
             # For now, we'll use a simple mapping where question_set_id maps to questions
             # This could be improved with a more sophisticated mapping strategy
-            questions = (
-                session.query(Question).filter(Question.material_name == material_name).all()
+            summary_type = question_set_id.split("-")[0]
+            content_type = question_set_id.split("-")[1]
+            queried_questions = (
+                session.query(Question)
+                .filter(
+                    Question.material_name == material_name,
+                    Question.summary_type == summary_type,
+                    Question.content_type == content_type,
+                )
+                .all()
             )
 
-            if not questions:
+            if not queried_questions:
                 raise ValueError(f"No questions found for material: {material_name}")
+            if len(queried_questions) != 1:
+                raise ValueError(
+                    f"Multiple questions found for material: {material_name}, summary_type: {summary_type}, content_type: {content_type}"
+                )
+            question = queried_questions[0]
 
             # Calculate correct rate
             correct_count = 0
-            total_count = len(answer)
+            question_content = question.content
+            total_count = len(question_content)
 
             # For each answer provided by the user
             for question_key, user_choice in answer.items():
                 # Find corresponding question in database
                 # This is a simplified approach - in practice, you might need a more sophisticated mapping
-                for question in questions:
-                    question_content = question.content
-                    if isinstance(question_content, dict):
-                        # Check if this question matches the question_key
-                        # This is where you'd implement your specific question matching logic
-                        # For now, we'll assume the question content structure supports this
-                        if self._check_user_answer(question_content, question_key, user_choice):
-                            correct_count += 1
-                            break
+
+                if isinstance(question_content, dict):
+                    if self._check_user_answer(question_content, question_key, user_choice):
+                        correct_count += 1
 
             correct_rate = correct_count / total_count if total_count > 0 else 0.0
 
