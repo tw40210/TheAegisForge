@@ -7,7 +7,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from src.py_libs.controllers.material_controller import MaterialController
-from src.py_libs.controllers.sql_db_controller import Account, Base, Question, Summary
+from src.py_libs.controllers.sql_db_controller import (
+    Account,
+    Base,
+    Item,
+    Question,
+    Summary,
+)
 
 # Test database URL
 TEST_DB_URL = "sqlite:///:memory:"
@@ -395,19 +401,28 @@ class TestListAvailableMaterials:
         result = material_controller.submit_question_set_response(
             id_token="mock_token",
             answer=user_answers,
-            question_set_id="test_set_1",
+            question_set_id="TestSummary-test_content",
             material_name="test_material",
         )
 
         # Verify response
         assert result["success"] is True
         assert result["material_name"] == "test_material"
-        assert result["question_set_id"] == "test_set_1"
+        assert result["question_set_id"] == "TestSummary-test_content"
         assert result["correct_rate"] == 0.5  # 1 out of 2 correct
         assert result["correct_count"] == 1
         assert result["total_count"] == 2
         assert "finish_time" in result
         assert "account_id" in result
+
+        # Verify rewards are included
+        assert "rewards" in result
+        rewards = result["rewards"]
+        assert "rewards_sent" in rewards
+        assert "total_items" in rewards
+        assert "message" in rewards
+        assert "correct_rate_tier" in rewards
+        assert rewards["correct_rate_tier"] == "Basic"  # 50% correct rate
 
         mock_verify_token.assert_called_once_with("mock_token")
 
@@ -442,3 +457,324 @@ class TestListAvailableMaterials:
                 question_set_id="test_set",
                 material_name="test_material",
             )
+
+
+class TestRewardSystem:
+    """Test cases for the reward system functionality."""
+
+    def test_get_performance_tier_excellent(self, material_controller):
+        """Test performance tier calculation for excellent performance."""
+        assert material_controller._get_performance_tier(0.95) == "Excellent"
+        assert material_controller._get_performance_tier(0.90) == "Excellent"
+
+    def test_get_performance_tier_great(self, material_controller):
+        """Test performance tier calculation for great performance."""
+        assert material_controller._get_performance_tier(0.85) == "Great"
+        assert material_controller._get_performance_tier(0.80) == "Great"
+
+    def test_get_performance_tier_good(self, material_controller):
+        """Test performance tier calculation for good performance."""
+        assert material_controller._get_performance_tier(0.75) == "Good"
+        assert material_controller._get_performance_tier(0.70) == "Good"
+
+    def test_get_performance_tier_decent(self, material_controller):
+        """Test performance tier calculation for decent performance."""
+        assert material_controller._get_performance_tier(0.65) == "Decent"
+        assert material_controller._get_performance_tier(0.60) == "Decent"
+
+    def test_get_performance_tier_basic(self, material_controller):
+        """Test performance tier calculation for basic performance."""
+        assert material_controller._get_performance_tier(0.55) == "Basic"
+        assert material_controller._get_performance_tier(0.40) == "Basic"
+
+    def test_get_performance_tier_participation(self, material_controller):
+        """Test performance tier calculation for participation level."""
+        assert material_controller._get_performance_tier(0.35) == "Participation"
+        assert material_controller._get_performance_tier(0.0) == "Participation"
+
+    def test_calculate_and_send_rewards_no_items_available(self, material_controller):
+        """Test reward calculation when no items are available."""
+        # Mock the item_controller's list_items method
+        material_controller.item_controller.list_items = lambda: []
+
+        result = material_controller._calculate_and_send_rewards(1, 0.85)
+
+        assert result["rewards_sent"] == []
+        assert result["total_items"] == 0
+        assert result["message"] == "No gacha tickets available for rewards"
+
+    def test_calculate_and_send_rewards_no_gacha_tickets(self, material_controller):
+        """Test reward calculation when no gacha tickets are available."""
+        # Mock the item_controller's list_items method to return non-gacha items
+        material_controller.item_controller.list_items = lambda: [
+            {"id": 1, "name": "Health Potion"},
+            {"id": 2, "name": "Energy Crystal"},
+        ]
+
+        result = material_controller._calculate_and_send_rewards(1, 0.85)
+
+        assert result["rewards_sent"] == []
+        assert result["total_items"] == 0
+        assert result["message"] == "No gacha tickets available for rewards"
+
+    @patch("random.randint")
+    @patch("random.choice")
+    def test_calculate_and_send_rewards_excellent_performance(
+        self, mock_choice, mock_randint, material_controller
+    ):
+        """Test reward calculation for excellent performance (90%+)."""
+        # Mock available gacha tickets
+        gacha_tickets = [
+            {"id": 1, "name": "Standard Gacha Ticket"},
+            {"id": 2, "name": "Premium Gacha Ticket"},
+            {"id": 3, "name": "Rare Gacha Ticket"},
+        ]
+        material_controller.item_controller.list_items = lambda: gacha_tickets
+
+        # Mock random choices
+        mock_randint.side_effect = [4, 2, 1, 3, 1]  # item_count=4, then quantities 2,1,3,1
+        mock_choice.side_effect = [
+            gacha_tickets[0],  # Standard Gacha Ticket
+            gacha_tickets[1],  # Premium Gacha Ticket
+            gacha_tickets[2],  # Rare Gacha Ticket
+            gacha_tickets[0],  # Standard Gacha Ticket (4th item)
+        ]
+
+        # Mock item controller responses
+        send_responses = [
+            {"success": True, "item_name": "Standard Gacha Ticket", "total_amount": 5},
+            {"success": True, "item_name": "Premium Gacha Ticket", "total_amount": 2},
+            {"success": True, "item_name": "Rare Gacha Ticket", "total_amount": 4},
+            {"success": True, "item_name": "Standard Gacha Ticket", "total_amount": 6},
+        ]
+        call_count = 0
+
+        def mock_send_item(item_id, quantity, account_id):
+            nonlocal call_count
+            response = send_responses[call_count % len(send_responses)]
+            call_count += 1
+            return response
+
+        material_controller.item_controller.send_item_to_account = mock_send_item
+
+        result = material_controller._calculate_and_send_rewards(42, 0.95)
+
+        assert len(result["rewards_sent"]) == 4
+        assert result["total_items"] == 7  # 2+1+3+1
+        assert result["message"] == "Excellent performance! Outstanding rewards!"
+        assert result["correct_rate_tier"] == "Excellent"
+
+        # Verify item controller was called correctly
+        assert call_count == 4
+
+    @patch("random.randint")
+    @patch("random.choice")
+    def test_calculate_and_send_rewards_good_performance(
+        self, mock_choice, mock_randint, material_controller
+    ):
+        """Test reward calculation for good performance (70-79%)."""
+        gacha_tickets = [
+            {"id": 1, "name": "Standard Gacha Ticket"},
+            {"id": 2, "name": "Premium Gacha Ticket"},
+        ]
+        material_controller.item_controller.list_items = lambda: gacha_tickets
+
+        mock_randint.side_effect = [2, 1, 2]  # item_count=2, quantities 1,2
+        mock_choice.side_effect = [gacha_tickets[0], gacha_tickets[1]]
+
+        send_responses = [
+            {"success": True, "item_name": "Standard Gacha Ticket", "total_amount": 3},
+            {"success": True, "item_name": "Premium Gacha Ticket", "total_amount": 2},
+        ]
+        call_count = 0
+
+        def mock_send_item(item_id, quantity, account_id):
+            nonlocal call_count
+            response = send_responses[call_count % len(send_responses)]
+            call_count += 1
+            return response
+
+        material_controller.item_controller.send_item_to_account = mock_send_item
+
+        result = material_controller._calculate_and_send_rewards(42, 0.75)
+
+        assert len(result["rewards_sent"]) == 2
+        assert result["total_items"] == 3  # 1+2
+        assert result["message"] == "Good work! Here are your rewards!"
+        assert result["correct_rate_tier"] == "Good"
+
+    @patch("random.randint")
+    @patch("random.choice")
+    def test_calculate_and_send_rewards_participation_level(
+        self, mock_choice, mock_randint, material_controller
+    ):
+        """Test reward calculation for participation level (<40%)."""
+        gacha_tickets = [{"id": 1, "name": "Standard Gacha Ticket"}]
+        material_controller.item_controller.list_items = lambda: gacha_tickets
+
+        mock_randint.return_value = 1  # quantity=1
+        mock_choice.return_value = gacha_tickets[0]
+
+        material_controller.item_controller.send_item_to_account = (
+            lambda item_id, quantity, account_id: {
+                "success": True,
+                "item_name": "Standard Gacha Ticket",
+                "total_amount": 1,
+            }
+        )
+
+        result = material_controller._calculate_and_send_rewards(42, 0.30)
+
+        assert len(result["rewards_sent"]) == 1
+        assert result["total_items"] == 1
+        assert result["message"] == "Don't give up! Participation reward!"
+        assert result["correct_rate_tier"] == "Participation"
+
+    @patch("random.randint")
+    @patch("random.choice")
+    def test_calculate_and_send_rewards_item_send_failure(
+        self, mock_choice, mock_randint, material_controller
+    ):
+        """Test reward calculation when item sending fails."""
+        gacha_tickets = [{"id": 1, "name": "Standard Gacha Ticket"}]
+        material_controller.item_controller.list_items = lambda: gacha_tickets
+
+        mock_randint.return_value = 1
+        mock_choice.return_value = gacha_tickets[0]
+
+        # Mock failed item sending
+        material_controller.item_controller.send_item_to_account = (
+            lambda item_id, quantity, account_id: {
+                "success": False,
+                "message": "Failed to send item",
+            }
+        )
+
+        result = material_controller._calculate_and_send_rewards(42, 0.85)
+
+        assert result["rewards_sent"] == []
+        assert result["total_items"] == 0
+        assert result["message"] == "Great job! Well-deserved rewards!"
+        assert result["correct_rate_tier"] == "Great"
+
+    @patch("firebase_admin.auth.verify_id_token")
+    def test_submit_question_set_response_with_rewards(
+        self, mock_verify_token, material_controller, engine
+    ):
+        """Test submitting response includes reward information."""
+
+        # Setup test data
+        mock_verify_token.return_value = {"uid": "test_uid"}
+
+        with Session(engine) as session:
+            # Create account
+            account = Account(name="test_user", firebaseUID="test_uid")
+            session.add(account)
+            session.flush()
+
+            # Create gacha ticket items
+            items = [
+                Item(id=1, name="Standard Gacha Ticket"),
+                Item(id=2, name="Premium Gacha Ticket"),
+            ]
+            session.add_all(items)
+
+            # Create question
+            question = Question(
+                question_type="mc_question",
+                summary_type="test",
+                content_type="multiple_choice",
+                index_number=0,
+                material_name="test_material",
+                content={
+                    "question_1": {
+                        "choice_1": {"text": "Option A", "answer": True},
+                        "choice_2": {"text": "Option B", "answer": False},
+                    }
+                },
+            )
+            session.add(question)
+            session.commit()
+
+        # Submit response
+        result = material_controller.submit_question_set_response(
+            id_token="mock_token",
+            answer={"question_1": "choice_1"},  # Correct answer
+            question_set_id="test-multiple_choice",
+            material_name="test_material",
+        )
+
+        # Verify response includes rewards
+        assert result["success"] is True
+        assert result["correct_rate"] == 1.0  # 100% correct
+        assert "rewards" in result
+
+        rewards = result["rewards"]
+        assert "rewards_sent" in rewards
+        assert "total_items" in rewards
+        assert "message" in rewards
+        assert "correct_rate_tier" in rewards
+        assert rewards["correct_rate_tier"] == "Excellent"
+
+    @patch("firebase_admin.auth.verify_id_token")
+    def test_submit_question_set_response_with_rewards_no_gacha_tickets(
+        self, mock_verify_token, material_controller, engine
+    ):
+        """Test submitting response when no gacha tickets are available."""
+        from src.py_libs.controllers.sql_db_controller import Account, Item, Question
+
+        mock_verify_token.return_value = {"uid": "test_uid"}
+
+        with Session(engine) as session:
+            # Create account
+            account = Account(name="test_user", firebaseUID="test_uid")
+            session.add(account)
+            session.flush()
+
+            # Create non-gacha items only
+            items = [
+                Item(id=1, name="Health Potion"),
+                Item(id=2, name="Energy Crystal"),
+            ]
+            session.add_all(items)
+
+            # Create question
+            question = Question(
+                question_type="mc_question",
+                summary_type="test",
+                content_type="multiple_choice",
+                index_number=0,
+                material_name="test_material",
+                content={
+                    "question_1": {
+                        "choice_1": {"text": "Option A", "answer": True},
+                    }
+                },
+            )
+            session.add(question)
+            session.commit()
+
+        # Mock the item_controller to return only non-gacha items
+        original_list_items = material_controller.item_controller.list_items
+        material_controller.item_controller.list_items = lambda: [
+            {"id": 1, "name": "Health Potion"},
+            {"id": 2, "name": "Energy Crystal"},
+        ]
+
+        try:
+            result = material_controller.submit_question_set_response(
+                id_token="mock_token",
+                answer={"question_1": "choice_1"},
+                question_set_id="test-multiple_choice",
+                material_name="test_material",
+            )
+
+            # Verify response includes empty rewards
+            assert result["success"] is True
+            rewards = result["rewards"]
+            assert rewards["rewards_sent"] == []
+            assert rewards["total_items"] == 0
+            assert rewards["message"] == "No gacha tickets available for rewards"
+        finally:
+            # Restore original method
+            material_controller.item_controller.list_items = original_list_items

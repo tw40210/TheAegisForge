@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import random
 from datetime import datetime
 from typing import Any
 
 from firebase_admin import auth
 from sqlalchemy.orm import Session
 
+from src.py_libs.controllers.item_controller import ItemController
 from src.py_libs.controllers.sql_db_controller import (
     Account,
     MaterialStory,
@@ -30,6 +32,7 @@ class MaterialController:
     def __init__(self):
         """Initialize the material controller."""
         self.engine = engine
+        self.item_controller = ItemController()
 
     def get_questions_by_material_name(self, material_name: str) -> list[dict[str, Any]]:
         """Retrieve all questions associated with a specific material name.
@@ -275,6 +278,9 @@ class MaterialController:
 
             session.commit()
 
+            # Calculate and send rewards based on correct rate
+            rewards_data = self._calculate_and_send_rewards(account.id, correct_rate)
+
             return {
                 "success": True,
                 "material_name": material_name,
@@ -284,7 +290,104 @@ class MaterialController:
                 "total_count": total_count,
                 "finish_time": current_time,
                 "account_id": account.id,
+                "rewards": rewards_data,
             }
+
+    def _calculate_and_send_rewards(self, account_id: int, correct_rate: float) -> dict[str, Any]:
+        """Calculate and send rewards based on correct rate.
+
+        Args:
+            account_id: The account ID to send rewards to
+            correct_rate: The percentage of correct answers (0.0 to 1.0)
+
+        Returns:
+            Dictionary containing reward information
+        """
+        rewards_sent = []
+        total_items_sent = 0
+
+        # Get list of available gacha tickets for rewards
+        all_items = self.item_controller.list_items()
+        available_items = [item for item in all_items if "Gacha Ticket" in item["name"]]
+
+        if not available_items:
+            return {
+                "rewards_sent": [],
+                "total_items": 0,
+                "message": "No gacha tickets available for rewards",
+            }
+
+        # Define reward tiers based on correct rate
+        if correct_rate >= 0.9:  # 90%+ - Excellent performance
+            item_count = random.randint(3, 5)
+            message = "Excellent performance! Outstanding rewards!"
+        elif correct_rate >= 0.8:  # 80-89% - Great performance
+            item_count = random.randint(2, 4)
+            message = "Great job! Well-deserved rewards!"
+        elif correct_rate >= 0.7:  # 70-79% - Good performance
+            item_count = random.randint(2, 3)
+            message = "Good work! Here are your rewards!"
+        elif correct_rate >= 0.6:  # 60-69% - Decent performance
+            item_count = random.randint(1, 2)
+            message = "Nice effort! Small rewards for you!"
+        elif correct_rate >= 0.4:  # 40-59% - Basic performance
+            item_count = 1
+            message = "Keep practicing! Here's a consolation reward!"
+        else:  # Below 40% - Participation reward
+            item_count = 1
+            message = "Don't give up! Participation reward!"
+
+        # Send random items as rewards
+        for _ in range(item_count):
+            # Select a random item
+            random_item = random.choice(available_items)
+            item_id = random_item["id"]
+
+            # Random quantity (1-3 for most items, but could be adjusted)
+            quantity = random.randint(1, 3)
+
+            # Send the item
+            result = self.item_controller.send_item_to_account(item_id, quantity, account_id)
+
+            if result["success"]:
+                rewards_sent.append(
+                    {
+                        "item_id": item_id,
+                        "item_name": result["item_name"],
+                        "quantity": quantity,
+                        "total_amount": result["total_amount"],
+                    }
+                )
+                total_items_sent += quantity
+
+        return {
+            "rewards_sent": rewards_sent,
+            "total_items": total_items_sent,
+            "message": message,
+            "correct_rate_tier": self._get_performance_tier(correct_rate),
+        }
+
+    def _get_performance_tier(self, correct_rate: float) -> str:
+        """Get performance tier name based on correct rate.
+
+        Args:
+            correct_rate: The percentage of correct answers (0.0 to 1.0)
+
+        Returns:
+            String describing the performance tier
+        """
+        if correct_rate >= 0.9:
+            return "Excellent"
+        elif correct_rate >= 0.8:
+            return "Great"
+        elif correct_rate >= 0.7:
+            return "Good"
+        elif correct_rate >= 0.6:
+            return "Decent"
+        elif correct_rate >= 0.4:
+            return "Basic"
+        else:
+            return "Participation"
 
     def _check_user_answer(
         self, question_content: dict, question_key: str, user_choice: str

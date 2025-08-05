@@ -565,3 +565,173 @@ class TestSubmitQuestionSetResponse:
         response = await client.post("/story_material/submit_response", json=request_data)
 
         assert response.status_code == 422  # Validation error
+
+    @pytest.mark.asyncio
+    @patch("src.routers.material_router.material_controller")
+    async def test_submit_question_set_response_with_rewards_success(self, mock_controller, client):
+        """Test successful question set response submission with rewards included."""
+        # Mock successful response with rewards
+        mock_response_data = {
+            "success": True,
+            "material_name": "test_material",
+            "question_set_id": "test_set_1",
+            "correct_rate": 0.85,
+            "correct_count": 17,
+            "total_count": 20,
+            "finish_time": "2023-12-01T10:00:00",
+            "account_id": 42,
+            "rewards": {
+                "rewards_sent": [
+                    {
+                        "item_id": 1,
+                        "item_name": "Standard Gacha Ticket",
+                        "quantity": 2,
+                        "total_amount": 8,
+                    },
+                    {
+                        "item_id": 2,
+                        "item_name": "Premium Gacha Ticket",
+                        "quantity": 1,
+                        "total_amount": 3,
+                    },
+                ],
+                "total_items": 3,
+                "message": "Great job! Well-deserved rewards!",
+                "correct_rate_tier": "Great",
+            },
+        }
+        mock_controller.submit_question_set_response.return_value = mock_response_data
+
+        request_data = {
+            "id_token": "valid_firebase_token",
+            "answer": {
+                "question_1": "choice_1",
+                "question_2": "choice_2",
+            },
+            "question_set_id": "test_set_1",
+            "material_name": "test_material",
+        }
+
+        response = await client.post("/story_material/submit_response", json=request_data)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert data["data"]["correct_rate"] == 0.85
+        assert data["data"]["material_name"] == "test_material"
+
+        # Verify rewards are included in response
+        assert "rewards" in data["data"]
+        rewards = data["data"]["rewards"]
+        assert len(rewards["rewards_sent"]) == 2
+        assert rewards["total_items"] == 3
+        assert rewards["message"] == "Great job! Well-deserved rewards!"
+        assert rewards["correct_rate_tier"] == "Great"
+
+        # Verify individual reward items
+        assert rewards["rewards_sent"][0]["item_name"] == "Standard Gacha Ticket"
+        assert rewards["rewards_sent"][0]["quantity"] == 2
+        assert rewards["rewards_sent"][1]["item_name"] == "Premium Gacha Ticket"
+        assert rewards["rewards_sent"][1]["quantity"] == 1
+
+    @pytest.mark.asyncio
+    @patch("src.routers.material_router.material_controller")
+    async def test_submit_question_set_response_with_no_rewards(self, mock_controller, client):
+        """Test response when no gacha tickets are available for rewards."""
+        # Mock response with no rewards available
+        mock_response_data = {
+            "success": True,
+            "material_name": "test_material",
+            "question_set_id": "test_set_1",
+            "correct_rate": 0.95,
+            "correct_count": 19,
+            "total_count": 20,
+            "finish_time": "2023-12-01T10:00:00",
+            "account_id": 42,
+            "rewards": {
+                "rewards_sent": [],
+                "total_items": 0,
+                "message": "No gacha tickets available for rewards",
+                "correct_rate_tier": "Excellent",
+            },
+        }
+        mock_controller.submit_question_set_response.return_value = mock_response_data
+
+        request_data = {
+            "id_token": "valid_firebase_token",
+            "answer": {
+                "question_1": "choice_1",
+            },
+            "question_set_id": "test_set_1",
+            "material_name": "test_material",
+        }
+
+        response = await client.post("/story_material/submit_response", json=request_data)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert data["data"]["correct_rate"] == 0.95
+
+        # Verify empty rewards are handled properly
+        rewards = data["data"]["rewards"]
+        assert rewards["rewards_sent"] == []
+        assert rewards["total_items"] == 0
+        assert rewards["message"] == "No gacha tickets available for rewards"
+        assert rewards["correct_rate_tier"] == "Excellent"
+
+    @pytest.mark.asyncio
+    @patch("src.routers.material_router.material_controller")
+    async def test_submit_question_set_response_with_participation_rewards(
+        self, mock_controller, client
+    ):
+        """Test response with participation level rewards."""
+        # Mock response with participation level performance
+        mock_response_data = {
+            "success": True,
+            "material_name": "test_material",
+            "question_set_id": "test_set_1",
+            "correct_rate": 0.30,
+            "correct_count": 3,
+            "total_count": 10,
+            "finish_time": "2023-12-01T10:00:00",
+            "account_id": 42,
+            "rewards": {
+                "rewards_sent": [
+                    {
+                        "item_id": 1,
+                        "item_name": "Standard Gacha Ticket",
+                        "quantity": 1,
+                        "total_amount": 1,
+                    }
+                ],
+                "total_items": 1,
+                "message": "Don't give up! Participation reward!",
+                "correct_rate_tier": "Participation",
+            },
+        }
+        mock_controller.submit_question_set_response.return_value = mock_response_data
+
+        request_data = {
+            "id_token": "valid_firebase_token",
+            "answer": {
+                "question_1": "choice_1",
+            },
+            "question_set_id": "test_set_1",
+            "material_name": "test_material",
+        }
+
+        response = await client.post("/story_material/submit_response", json=request_data)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert data["data"]["correct_rate"] == 0.30
+
+        # Verify participation rewards
+        rewards = data["data"]["rewards"]
+        assert len(rewards["rewards_sent"]) == 1
+        assert rewards["total_items"] == 1
+        assert rewards["message"] == "Don't give up! Participation reward!"
+        assert rewards["correct_rate_tier"] == "Participation"
+        assert rewards["rewards_sent"][0]["item_name"] == "Standard Gacha Ticket"
